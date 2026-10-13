@@ -41,15 +41,53 @@ def ragic_date(s):
     return ""
 
 
-CELL = re.compile(r"^\s*(-?\d+)\s*(?:\(\s*([+-]?\d+)\s*\))?")
+def week_val(v):
+    """parseInt-like week number; 53 counts as 0 (same as the Ragic Balance JS)."""
+    m = re.match(r"\s*(\d+)", str(v or ""))
+    n = int(m.group(1)) if m else 0
+    return 0 if n == 53 else n
 
 
-def parse_cell(v):
-    """'15(+4)' -> (required=15, balance=4)."""
-    m = CELL.match(str(v or ""))
-    if not m:
-        return 0, 0
-    return int(m.group(1)), int(m.group(2) or 0)
+def year_of(v):
+    m = re.search(r"\d{4}", str(v or ""))
+    return m.group(0) if m else ""
+
+
+def staffing_balance(rec, year):
+    """Port of the Ragic 'Balance' action (balance(id) JS on planing/3).
+
+    Returns {position: (required[52], available[52])} for the given year.
+    """
+    required = {}
+    for row in (rec.get("_subtable_1003520") or {}).values():
+        pos = (row.get("Position") or "").strip()
+        if year_of(row.get("Year")) != year or not pos:
+            continue
+        required[pos] = [week_val(row.get(str(w))) for w in range(1, 53)]
+
+    available = {}
+    for row in (rec.get("_subtable_1003224") or {}).values():
+        pos = (row.get("Position") or "").strip()
+        status = (row.get("At work") or "").strip()
+        if year_of(row.get("Year")) != year or not pos or status in ("Terminate", "Workshop"):
+            continue
+        dep, ariv, read = (week_val(row.get(k)) for k in ("Dep week", "Ariv week", "Read week"))
+        avail = available.setdefault(pos, [0] * 52)
+        for w in range(1, 53):
+            work = False
+            if status == "Yes" and dep > 0 and w >= dep:
+                work = True
+            elif status == "Scheduled" and dep > 0 and w >= dep:
+                work = True
+            elif status == "Scheduled" and dep == 0 and read > 0 and w >= read:
+                work = True
+            if ariv and w >= ariv and (not dep or w < dep):
+                work = False
+            if work:
+                avail[w - 1] += 1
+
+    return {pos: (required.get(pos, [0] * 52), available.get(pos, [0] * 52))
+            for pos in list(required) + [p for p in available if p not in required]}
 
 
 # ---------- history storage ----------
@@ -127,15 +165,13 @@ def build_snapshot(raw, today):
             continue
         seen.add(name)
         staffing = None
-        rows = (r.get("_subtable_1016490") or {}).values()
         by_pos = []
-        for row in rows:
-            pos = (row.get("Position") or "").strip()
-            if not pos or "TOTAL" in pos.upper():
-                continue
-            cells = [parse_cell(row.get(str(w))) for w in weeks]
-            req = [c[0] for c in cells]
-            bal = [c[1] for c in cells]
+        plan = staffing_balance(r, str(year))
+        if not any(any(req) for req, _ in plan.values()):
+            plan = {}  # no staffing plan for this year -> nothing to compare against
+        for pos, (req52, avail52) in plan.items():
+            req = [req52[w - 1] for w in weeks]
+            bal = [avail52[w - 1] - req52[w - 1] for w in weeks]
             if any(req) or any(bal):
                 by_pos.append({"position": pos, "required": req, "balance": bal})
         if by_pos:

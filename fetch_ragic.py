@@ -19,12 +19,14 @@ from pathlib import Path
 # Field ids are listed for documentation and server-side filtering; records are
 # returned keyed by field label, which is what build.py reads.
 SHEETS = {
-    # Projects with staffing subtables (_subtable_1016490 = required(+/-balance) per position/week)
+    # Projects with the staffing subtables the Ragic "Balance" JS uses:
+    # 1003224 = people on the project (week of departure/arrival/ready), 1003520 = required per position/week.
     "projects": {
         "path": "planing/3",
         "params": {"subtables": "1", "where": "1009297,eq,Yes"},
-        "keep": ["Project", "Active", "Loc", "Start date", "End date", "Used hours",
-                 "_subtable_1016490"],
+        "keep": ["Project", "Active", "Loc", "Start date", "End date", "Used hours", "Year",
+                 "_subtable_1003224", "_subtable_1003520"],
+        "sub_keep": {"_subtable_1003224": ["Year", "Position", "At work", "Dep week", "Ariv week", "Read week"]},
     },
     # People: only status fields, no personal data is requested
     "people": {
@@ -42,10 +44,15 @@ SHEETS = {
 }
 
 
-def trim_record(rec, keep):
+def trim_record(rec, keep, sub_keep=None):
+    """Keep only the listed fields; subtable rows can be trimmed too (drops names)."""
     if not keep:
         return rec
-    return {k: rec.get(k) for k in keep if k in rec}
+    out = {k: rec.get(k) for k in keep if k in rec}
+    for sub, fields in (sub_keep or {}).items():
+        if isinstance(out.get(sub), dict):
+            out[sub] = {rid: {f: row.get(f) for f in fields if f in row} for rid, row in out[sub].items()}
+    return out
 
 
 def fetch_sheet(base, account, key, cfg):
@@ -70,7 +77,7 @@ def fetch_sheet(base, account, key, cfg):
                 k.isdigit() for k in data):
             raise RuntimeError(f"Ragic error for {cfg['path']}: {str(data)[:300]}")
         page = [r for k, r in data.items() if k.isdigit()]
-        records.extend(trim_record(r, cfg.get("keep")) for r in page)
+        records.extend(trim_record(r, cfg.get("keep"), cfg.get("sub_keep")) for r in page)
         if len(page) < limit:
             return records
         offset += limit
