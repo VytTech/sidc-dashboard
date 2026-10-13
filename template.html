@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>SIDC Daily Overview</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --ink:#15181d; --muted:#5d6673; --faint:#8a929e; --line:#e3e6eb; --soft:#f0f2f5;
+  --accent:#1f5fbf; --onsite:#2563c9; --workshop:#0e9384; --scheduled:#d48a0b; --home:#9aa3af; --other:#cbd2da;
+  --neg:#c62f2f; --neg-bg:#fbe5e3; --neg-bg2:#f4bdb8; --pos:#16794a; --pos-bg:#e1f3e8; --zero-bg:#f0f2f5;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1216; --card:#171b21; --ink:#e8ebef; --muted:#a3abb6; --faint:#7d8693; --line:#2a3039; --soft:#1e232a;
+    --accent:#6ea2ff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#6d7683; --other:#3a414b;
+    --neg:#ff7b72; --neg-bg:#3a1d1d; --neg-bg2:#5c2626; --pos:#4cc38a; --pos-bg:#173226; --zero-bg:#1e232a;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1216; --card:#171b21; --ink:#e8ebef; --muted:#a3abb6; --faint:#7d8693; --line:#2a3039; --soft:#1e232a;
+  --accent:#6ea2ff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#6d7683; --other:#3a414b;
+  --neg:#ff7b72; --neg-bg:#3a1d1d; --neg-bg2:#5c2626; --pos:#4cc38a; --pos-bg:#173226; --zero-bg:#1e232a;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{font-size:22px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);margin-top:2px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:12px;font-weight:600}
+h2{font-size:16px;margin:0 0 4px}
+.hint{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+section{margin-top:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:16px}
+.grid{display:grid;gap:12px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}
+.kpi .label{color:var(--muted);font-size:12.5px;display:flex;align-items:center;gap:6px}
+.kpi .value{font-size:28px;font-weight:650;letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .delta{font-size:12px;color:var(--faint);margin-top:2px;min-height:16px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.up{color:var(--pos)} .down{color:var(--neg)}
+.two{grid-template-columns:1.4fr 1fr}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+.changes{list-style:none;margin:0;padding:0}
+.changes li{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line)}
+.changes li:last-child{border-bottom:0}
+.tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:70px}
+.chg{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:0 16px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600;background:var(--card);position:sticky;top:0}
+td.num,th.num{text-align:right}
+tbody tr.proj{cursor:pointer}
+tbody tr.proj:hover td{background:var(--soft)}
+tr.detail td{background:var(--soft);white-space:normal}
+.muted{color:var(--muted)} .faint{color:var(--faint)}
+.bal{display:inline-block;min-width:38px;text-align:center;border-radius:6px;padding:1px 6px;font-weight:600}
+.bal.n{background:var(--neg-bg);color:var(--neg)} .bal.p{background:var(--pos-bg);color:var(--pos)} .bal.z{background:var(--zero-bg);color:var(--muted)}
+.heat td.c{text-align:center;padding:6px 4px;min-width:44px}
+.heat .cell{display:block;border-radius:6px;padding:4px 0;font-weight:600}
+.heat .n1{background:var(--neg-bg);color:var(--neg)} .heat .n2{background:var(--neg-bg2);color:var(--neg)}
+.heat .p1{background:var(--pos-bg);color:var(--pos)} .heat .z{background:var(--zero-bg);color:var(--faint)}
+.bars .row{display:grid;grid-template-columns:130px 1fr 44px;gap:10px;align-items:center;margin:6px 0}
+.bars .name{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .track{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--soft)}
+.bars .track span{display:block;height:100%}
+.bars .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.div{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;margin:5px 0}
+.div .axis{position:relative;height:16px}
+.div .axis:before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;border-left:1px solid var(--line)}
+.div .b{position:absolute;top:2px;height:12px;border-radius:3px}
+.div .lbl{position:absolute;top:0;font-size:11.5px;font-weight:600}
+svg text{fill:var(--muted);font-size:11px}
+.spark{display:block}
+.detailgrid{display:grid;grid-template-columns:minmax(200px,280px) 1fr;gap:20px;padding:6px 0}
+@media (max-width:700px){.detailgrid{grid-template-columns:1fr}}
+.detail table td,.detail table th{padding:5px 6px;background:transparent}
+footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
+.toggle{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+@media (max-width:520px){.kpi .value{font-size:24px}.bars .row{grid-template-columns:96px 1fr 36px}.div{grid-template-columns:96px 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>SIDC Projects · Daily Overview</h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <button class="toggle" id="theme">Theme</button>
+  </header>
+
+  <div class="grid kpis" id="kpis"></div>
+
+  <section class="grid two">
+    <div class="card">
+      <h2>What changed</h2>
+      <p class="hint" id="changesHint"></p>
+      <ul class="changes" id="changes"></ul>
+    </div>
+    <div class="card">
+      <h2>People on site – trend</h2>
+      <p class="hint">Daily headcount with status “at work”. History builds up with every daily update.</p>
+      <div id="trend"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Projects</h2>
+    <p class="hint">All active projects. Click a row for the position breakdown and the 8-week staffing plan. Short / spare = planned minus required people this week (red = people missing in at least one position).</p>
+    <div class="tablewrap"><table id="projects"></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Staffing outlook</h2>
+    <p class="hint">Red = people missing (sum of shortages over all positions), green = every position filled (number = spare people). Hover a cell for the positions. Only projects with a staffing plan in Ragic are shown.</p>
+    <div class="tablewrap"><table class="heat" id="heat"></table></div>
+  </section>
+
+  <section class="grid two">
+    <div class="card">
+      <h2>Workforce by position</h2>
+      <p class="hint" id="wfHint"></p>
+      <div class="legend" id="wfLegend"></div>
+      <div class="bars" id="wf"></div>
+    </div>
+    <div class="card">
+      <h2>Balance by position · this week</h2>
+      <p class="hint">Sum over all planned projects. Negative = positions still to be filled.</p>
+      <div id="posbal"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Additional manpower requests</h2>
+    <p class="hint">Requests from the last 4 weeks and upcoming weeks.</p>
+    <div class="tablewrap"><table id="requests"></table></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const D = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = n => Number(n || 0).toLocaleString("en-GB");
+const STATUS = [
+  ["Yes","On site","var(--onsite)"], ["Workshop","Workshop","var(--workshop)"],
+  ["Scheduled","Scheduled to travel","var(--scheduled)"], ["Home","At home","var(--home)"], ["Other","Other","var(--other)"]];
+const dateTxt = iso => iso ? new Date(iso + "T00:00:00").toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"}) : "";
+const shortDate = iso => iso ? new Date(iso + "T00:00:00").toLocaleDateString("en-GB", {day:"numeric", month:"short"}) : "";
+const balCls = v => v < 0 ? "n" : v > 0 ? "p" : "z";
+const sign = v => v > 0 ? "+" + v : String(v);
+
+// theme toggle (per-viewer convenience)
+(function(){
+  const root = document.documentElement;
+  try { const t = localStorage.getItem("theme"); if (t) root.dataset.theme = t; } catch(e){}
+  $("theme").onclick = () => {
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("theme", root.dataset.theme); } catch(e){}
+  };
+})();
+
+const updated = new Date(D.generated);
+$("sub").innerHTML = `<span class="badge">Week ${D.week}</span> &nbsp;${dateTxt(D.date)} · updated ${updated.toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"})}`;
+
+// ---------- KPIs ----------
+const prevT = D.trend.length > 1 ? D.trend[D.trend.length - 2] : null;
+const real = D.projects.filter(p => !p.internal);
+const shortNow = real.reduce((s,p) => s + (p.staffing ? p.staffing.short[0] : 0), 0);
+const openReq = D.requests.filter(r => r.gap > 0 && r.week >= D.week);
+const ws = D.workforce.status;
+const kpis = [
+  ["On site", ws.Yes || 0, "var(--onsite)", prevT ? (ws.Yes||0) - prevT.onsite : null],
+  ["In workshops", ws.Workshop || 0, "var(--workshop)"],
+  ["Scheduled to travel", ws.Scheduled || 0, "var(--scheduled)"],
+  ["At home (rotation)", ws.Home || 0, "var(--home)"],
+  ["Active workforce", D.workforce.total, null, prevT ? D.workforce.total - prevT.active : null],
+  ["Active projects", real.length, null],
+  ["Positions short · W" + D.week, -shortNow, "var(--neg)"],
+  ["Open manpower requests", openReq.reduce((s,r)=>s+r.gap,0), null, null, `${openReq.length} request(s)`],
+];
+$("kpis").innerHTML = kpis.map(([l,v,c,d,note]) => `
+  <div class="card kpi"><div class="label">${c?`<span class="dot" style="background:${c}"></span>`:""}${esc(l)}</div>
+  <div class="value">${fmt(v)}</div>
+  <div class="delta">${d === null || d === undefined ? (note||"") : d === 0 ? "no change vs previous day" :
+     `<span class="${d>0?"up":"down"}">${d>0?"▲":"▼"} ${Math.abs(d)}</span> vs previous day`}</div></div>`).join("");
+
+// ---------- changes ----------
+const C = D.changes;
+if (!C.since) {
+  $("changesHint").textContent = "This is the first snapshot. From tomorrow this list shows what changed since the previous update.";
+  $("changes").innerHTML = `<li class="muted">No earlier data to compare yet.</li>`;
+} else {
+  $("changesHint").textContent = `Compared with ${dateTxt(C.since)}.`;
+  $("changes").innerHTML = C.items.length ? C.items.map(i => `<li><span class="tag">${esc(i.kind)}</span><span>${esc(i.text)}</span>
+     ${i.delta ? `<span class="chg ${i.delta>0?"up":"down"}">${sign(i.delta)}</span>` : ""}</li>`).join("")
+     : `<li class="muted">No changes since the previous update.</li>`;
+}
+
+// ---------- trend chart ----------
+function lineChart(points, w=560, h=170){
+  if (points.length < 2) return `<p class="muted">Trend appears after the second daily update (currently ${points.length} day${points.length===1?"":"s"} of history: ${fmt(points[0]?.onsite)} on site today).</p>`;
+  const pad = {l:34,r:10,t:10,b:22};
+  const vals = points.map(p => p.onsite);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const y0 = Math.max(0, Math.floor((lo - (hi-lo)*0.2 - 1))), y1 = Math.ceil(hi + (hi-lo)*0.2 + 1);
+  const X = i => pad.l + i*(w-pad.l-pad.r)/(points.length-1);
+  const Y = v => pad.t + (h-pad.t-pad.b)*(1-(v-y0)/(y1-y0));
+  const path = points.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(p.onsite).toFixed(1)}`).join("");
+  const ticks = [y0, Math.round((y0+y1)/2), y1];
+  const step = Math.max(1, Math.ceil(points.length/6));
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="On-site headcount trend">
+    ${ticks.map(t=>`<line x1="${pad.l}" x2="${w-pad.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${pad.l-6}" y="${Y(t)+4}" text-anchor="end">${t}</text>`).join("")}
+    <path d="${path}" fill="none" stroke="var(--onsite)" stroke-width="2"/>
+    ${points.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p.onsite)}" r="${i===points.length-1?3.5:2}" fill="var(--onsite)"><title>${shortDate(p.date)}: ${p.onsite}</title></circle>`).join("")}
+    ${points.map((p,i)=> i%step===0 || i===points.length-1 ? `<text x="${X(i)}" y="${h-6}" text-anchor="middle">${shortDate(p.date)}</text>` : "").join("")}
+  </svg>`;
+}
+$("trend").innerHTML = lineChart(D.trend);
+
+function spark(name){
+  const pts = D.trend.map(t => t.projects[name] ?? 0);
+  if (pts.length < 2) return `<span class="faint">–</span>`;
+  const w=70,h=20, lo=Math.min(...pts), hi=Math.max(...pts), r=(hi-lo)||1;
+  const d = pts.map((v,i)=>`${i?"L":"M"}${(i*(w-2)/(pts.length-1)+1).toFixed(1)},${(h-2-(v-lo)/r*(h-4)).toFixed(1)}`).join("");
+  return `<svg class="spark" width="${w}" height="${h}"><path d="${d}" fill="none" stroke="var(--onsite)" stroke-width="1.5"/></svg>`;
+}
+
+// ---------- projects table ----------
+function period(p){
+  if (!p.start && !p.end) return `<span class="faint">–</span>`;
+  let s = `${p.start?shortDate(p.start):"…"} – ${p.end?dateTxt(p.end):"…"}`;
+  if (p.end){
+    const wl = Math.ceil((new Date(p.end) - new Date(D.date)) / (7*864e5));
+    s += wl >= 0 ? ` <span class="faint">(${wl} wk left)</span>` : ` <span class="down">(ended)</span>`;
+  }
+  return s;
+}
+function detail(p){
+  const pos = Object.entries(p.positions_onsite);
+  const left = pos.length ? `<table><thead><tr><th>Position (on site)</th><th class="num">People</th></tr></thead><tbody>${
+      pos.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">Nobody on site right now.</p>`;
+  let right = `<p class="muted">No staffing plan for this project in Ragic.</p>`;
+  if (p.staffing){
+    right = `<table><thead><tr><th>Required (balance)</th>${D.weeks.map(w=>`<th class="num">W${w}</th>`).join("")}</tr></thead><tbody>${
+      p.staffing.by_position.map(r=>`<tr><td>${esc(r.position)}</td>${r.required.map((q,i)=>`<td class="num">${q} <span class="bal ${balCls(r.balance[i])}">${sign(r.balance[i])}</span></td>`).join("")}</tr>`).join("")
+    }</tbody></table>`;
+  }
+  return `<div class="detailgrid"><div>${left}</div><div class="tablewrap" style="margin:0;padding:0">${right}</div></div>`;
+}
+function renderProjects(){
+  const cols = `<thead><tr><th>Project</th><th>Country</th><th>Period</th>
+    <th class="num">On site</th><th class="num">Workshop</th><th class="num">Scheduled</th><th class="num">Home</th>
+    <th class="num">Required W${D.week}</th><th class="num">Short / spare</th><th>Trend</th><th class="num">Hours booked</th></tr></thead>`;
+  let rows = "", lastInternal = false;
+  D.projects.forEach((p, i) => {
+    if (p.internal && !lastInternal){ rows += `<tr><td colspan="11" class="faint" style="padding-top:16px">Internal / other assignments</td></tr>`; lastInternal = true; }
+    const st = p.status, s = p.staffing;
+    rows += `<tr class="proj" data-i="${i}"><td><b>${esc(p.name)}</b></td><td>${esc(p.country)}</td><td>${period(p)}</td>
+      <td class="num"><b>${st.Yes||0}</b></td><td class="num">${st.Workshop||""}</td><td class="num">${st.Scheduled||""}</td><td class="num">${st.Home||""}</td>
+      <td class="num">${s ? s.required[0] : `<span class="faint">–</span>`}</td>
+      <td class="num">${s ? (s.short[0] < 0 ? `<span class="bal n" title="net ${sign(s.balance[0])}">${s.short[0]}</span>` : `<span class="bal ${balCls(s.balance[0])}">${sign(s.balance[0])}</span>`) : `<span class="faint">–</span>`}</td>
+      <td>${spark(p.name)}</td><td class="num">${p.used_hours ? fmt(p.used_hours) : `<span class="faint">–</span>`}</td></tr>
+      <tr class="detail" data-for="${i}" hidden><td colspan="11">${detail(p)}</td></tr>`;
+  });
+  $("projects").innerHTML = cols + `<tbody>${rows}</tbody>`;
+  $("projects").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
+    const d = $("projects").querySelector(`tr.detail[data-for="${tr.dataset.i}"]`); d.hidden = !d.hidden;
+  });
+}
+renderProjects();
+
+// ---------- heatmap ----------
+(function(){
+  const ps = D.projects.filter(p => p.staffing);
+  if (!ps.length){ $("heat").innerHTML = `<tr><td class="muted">No staffing plans found.</td></tr>`; return; }
+  const head = `<thead><tr><th>Project</th>${D.weeks.map((w,i)=>`<th class="c num" style="text-align:center">W${w}<div class="faint" style="font-weight:400">${shortDate(D.week_starts[i])}</div></th>`).join("")}</tr></thead>`;
+  const cls = v => v <= -3 ? "n2" : v < 0 ? "n1" : v > 0 ? "p1" : "z";
+  const body = ps.map(p => `<tr><td><b>${esc(p.name)}</b></td>${p.staffing.balance.map((net,i)=>{
+      const sh = p.staffing.short[i], v = sh < 0 ? sh : net;
+      const missing = p.staffing.by_position.filter(r => r.balance[i] < 0).map(r => `${r.position} ${r.balance[i]}`).join(", ");
+      return `<td class="c"><span class="cell ${cls(v)}" title="Required ${p.staffing.required[i]} · net ${sign(net)}${missing ? " · short: " + missing : ""}">${sign(v)}</span></td>`;
+    }).join("")}</tr>`).join("");
+  const tot = D.weeks.map((_,i)=>ps.reduce((s,p)=>s+p.staffing.short[i],0));
+  $("heat").innerHTML = head + `<tbody>${body}<tr><td class="muted">Total shortage</td>${tot.map(v=>`<td class="c"><span class="cell ${v<0?"n1":"z"}">${v}</span></td>`).join("")}</tr></tbody>`;
+})();
+
+// ---------- workforce ----------
+(function(){
+  const bp = Object.entries(D.workforce.by_position);
+  const max = Math.max(...bp.map(([,s]) => Object.values(s).reduce((a,b)=>a+b,0)));
+  $("wfLegend").innerHTML = STATUS.map(([,l,c])=>`<span><span class="dot" style="background:${c}"></span>${l}</span>`).join("");
+  $("wf").innerHTML = bp.map(([pos, s]) => {
+    const tot = Object.values(s).reduce((a,b)=>a+b,0);
+    return `<div class="row"><div class="name" title="${esc(pos)}">${esc(pos)}</div><div class="track" style="width:${(tot/max*100).toFixed(1)}%">${
+      STATUS.map(([k,l,c]) => s[k] ? `<span style="width:${(s[k]/tot*100).toFixed(2)}%;background:${c}" title="${l}: ${s[k]}"></span>` : "").join("")
+    }</div><div class="val">${tot}</div></div>`;
+  }).join("");
+  const w = D.workforce;
+  $("wfHint").textContent = `${fmt(w.total)} active people · ${fmt(w.own)} own staff, ${fmt(w.sub)} via subcontractors (${Math.round(w.sub/w.total*100)}%).`;
+
+  const pb = Object.entries(D.position_balance_now).filter(([,v]) => v !== 0);
+  if (!pb.length){ $("posbal").innerHTML = `<p class="muted">All planned positions are filled this week.</p>`; return; }
+  const m = Math.max(...pb.map(([,v])=>Math.abs(v)));
+  $("posbal").innerHTML = pb.map(([pos,v]) => {
+    const wd = Math.abs(v)/m*50;
+    return `<div class="div"><div class="name" title="${esc(pos)}">${esc(pos)}</div><div class="axis">
+      <span class="b" style="${v<0?`right:50%`:`left:50%`};width:${wd}%;background:${v<0?"var(--neg)":"var(--pos)"}"></span>
+      <span class="lbl" style="${v<0?`right:calc(50% + ${wd}% + 4px);color:var(--neg)`:`left:calc(50% + ${wd}% + 4px);color:var(--pos)`}">${sign(v)}</span></div></div>`;
+  }).join("");
+})();
+
+// ---------- requests ----------
+(function(){
+  const rs = D.requests;
+  if (!rs.length){ $("requests").innerHTML = `<tr><td class="muted">No recent requests.</td></tr>`; return; }
+  $("requests").innerHTML = `<thead><tr><th>Week needed</th><th>Project</th><th>Position</th><th class="num">Requested</th><th class="num">Filled</th><th>Status</th><th>Requested on</th></tr></thead><tbody>${
+    rs.map(r => {
+      const past = r.week < D.week;
+      const st = r.gap === 0 ? `<span class="bal p">filled</span>` : past ? `<span class="bal n">${r.gap} missing</span>` : `<span class="bal z">${r.gap} open</span>`;
+      return `<tr${past && r.gap===0 ? ' class="faint"' : ""}><td>W${r.week}${r.week===D.week?' <span class="badge">now</span>':""}</td><td>${esc(r.project)}</td><td>${esc(r.position)}</td>
+        <td class="num">${r.requested}</td><td class="num">${r.filled}</td><td>${st}</td><td class="muted">${shortDate(r.date)}</td></tr>`;
+    }).join("")}</tbody>`;
+})();
+
+$("foot").textContent = `Source: Ragic (SIDC10000) · aggregated daily, no personal data · snapshot ${D.date}`;
+</script>
+</body>
+</html>
