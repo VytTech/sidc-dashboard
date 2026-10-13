@@ -11,6 +11,7 @@
   --accent:#1f5fbf; --onsite:#2563c9; --workshop:#0e9384; --scheduled:#d48a0b; --home:#9aa3af; --other:#cbd2da;
   --neg:#c62f2f; --neg-bg:#fbe5e3; --neg-bg2:#f4bdb8; --pos:#16794a; --pos-bg:#e1f3e8; --zero-bg:#f0f2f5;
   --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.06);
+  --sel:#dfe9fb; --sel-detail:#f2f6fd;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -18,6 +19,7 @@
     --accent:#7aaaff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#7a8492; --other:#454d58;
     --neg:#ff8178; --neg-bg:#45222a; --neg-bg2:#6b2a2e; --pos:#55cc92; --pos-bg:#1b3a2c; --zero-bg:#2a313c;
     --shadow:0 0 0 1px rgba(255,255,255,.03),0 4px 14px rgba(0,0,0,.45);
+    --sel:#2b3d5e; --sel-detail:#232d3d;
   }
 }
 :root[data-theme="dark"]{
@@ -25,6 +27,7 @@
   --accent:#7aaaff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#7a8492; --other:#454d58;
   --neg:#ff8178; --neg-bg:#45222a; --neg-bg2:#6b2a2e; --pos:#55cc92; --pos-bg:#1b3a2c; --zero-bg:#2a313c;
   --shadow:0 0 0 1px rgba(255,255,255,.03),0 4px 14px rgba(0,0,0,.45);
+  --sel:#2b3d5e; --sel-detail:#232d3d;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);
@@ -59,7 +62,12 @@ th{font-size:12px;color:var(--muted);font-weight:600;background:var(--card);posi
 td.num,th.num{text-align:right}
 tbody tr.proj{cursor:pointer}
 tbody tr.proj:hover td{background:var(--soft)}
-tr.detail td{background:var(--soft);white-space:normal}
+tr.detail > td{background:var(--sel-detail);white-space:normal;box-shadow:inset 4px 0 0 var(--accent);border-bottom:2px solid var(--accent)}
+tbody tr.proj td:first-child::before{content:"▸";display:inline-block;width:14px;color:var(--faint);transition:transform .15s}
+tbody tr.proj.open td{background:var(--sel)}
+tbody tr.proj.open:hover td{background:var(--sel)}
+tbody tr.proj.open td:first-child{box-shadow:inset 4px 0 0 var(--accent)}
+tbody tr.proj.open td:first-child::before{transform:rotate(90deg);color:var(--accent)}
 .muted{color:var(--muted)} .faint{color:var(--faint)}
 .bal{display:inline-block;min-width:38px;text-align:center;border-radius:6px;padding:1px 6px;font-weight:600}
 .bal.n{background:var(--neg-bg);color:var(--neg)} .bal.p{background:var(--pos-bg);color:var(--pos)} .bal.z{background:var(--zero-bg);color:var(--muted)}
@@ -105,6 +113,57 @@ td.hot{color:var(--neg);font-weight:700}
 .modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
 .modal .tablewrap{max-height:62vh;overflow:auto}
 @media (max-width:520px){.modal{padding:8px}.modal-box{padding:14px 12px}}
+/* ---------- Visual skin ---------- */
+.v-sec{margin-top:18px}
+.v-title{font-size:19px;font-weight:700;margin:0 0 2px;letter-spacing:-.01em}
+.v-sub{color:var(--muted);margin:0 0 14px;font-size:13.5px}
+.v-hero{font-size:22px;line-height:1.35;margin:0 0 14px}
+.v-hero b{font-size:34px;letter-spacing:-.02em}
+.waffle{display:flex;flex-wrap:wrap;gap:2px;margin:6px 0 14px}
+.waffle i{width:11px;height:11px;border-radius:2px;display:block}
+.v-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.v-legend > div{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:10px;padding:10px 12px}
+.v-legend > div, .v-legend > div > div, .grid > *, .v-cards > *{min-width:0}
+.v-legend{grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr))}
+.v-legend .sw{width:14px;height:14px;border-radius:3px;flex:none;margin-top:4px}
+.v-legend b{display:block;font-size:24px;line-height:1.1}
+.v-legend span.t{color:var(--muted);font-size:12.5px}
+.v-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.v-card{display:flex;flex-direction:column;gap:10px}
+.v-card .head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.v-card .name{font-size:17px;font-weight:700}
+.v-card .big{font-size:40px;font-weight:750;line-height:1;letter-spacing:-.02em}
+.v-card .big small{font-size:13px;font-weight:500;color:var(--muted);margin-left:6px;letter-spacing:0}
+.v-card.dim{opacity:.6}
+.pill{display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:3px 10px;font-weight:650;font-size:13px;width:fit-content}
+.pill.bad{background:var(--neg-bg);color:var(--neg)}
+.pill.good{background:var(--pos-bg);color:var(--pos)}
+.pill.none{background:var(--soft);color:var(--muted)}
+.meter{height:10px;border-radius:5px;background:var(--soft);overflow:hidden;display:flex;gap:2px}
+.meter span{display:block;height:100%}
+.meter span:first-child{border-radius:5px 0 0 5px}
+.meter span:last-child{border-radius:0 5px 5px 0}
+.v-small{font-size:12.5px;color:var(--muted)}
+.v-dots{display:grid;grid-template-columns:110px 1fr;gap:8px 10px;align-items:center}
+.v-dots .wk{display:flex;gap:6px}
+.v-dots .wk span{width:38px;text-align:center;font-size:11px;color:var(--muted);line-height:1.2}
+.dot{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:750;font-size:13px;flex:none}
+.dot.bad{background:var(--neg);color:var(--card)}
+.dot.bad2{background:var(--neg-bg2);color:var(--neg)}
+.dot.good{background:var(--pos-bg);color:var(--pos)}
+.v-hbar{display:grid;grid-template-columns:120px 1fr 70px;gap:8px 10px;align-items:center}
+.v-hbar .bar{height:22px;background:var(--onsite);border-radius:0 4px 4px 0;min-width:3px}
+.v-hbar .val{font-weight:650;font-variant-numeric:tabular-nums}
+.v-alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.v-alert{display:flex;flex-direction:column;gap:6px}
+.v-alert .ico{font-size:26px;line-height:1}
+.v-alert b{font-size:34px;line-height:1}
+.v-alert.on{border-color:var(--neg)}
+.v-req{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.v-req > div{background:var(--soft);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.v-req .meter, .v-legend .meter{background:var(--card)}
+.v-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:520px){.v-hero b{font-size:28px}.v-dots{grid-template-columns:80px 1fr}.v-hbar{grid-template-columns:90px 1fr 56px}}
 footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
 .toggle{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer}
 @media (max-width:520px){.kpi .value{font-size:24px}.bars .row{grid-template-columns:96px 1fr 36px}.div{grid-template-columns:96px 1fr}}
@@ -117,9 +176,14 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
       <h1>SIDC Projects · Daily Overview</h1>
       <div class="sub" id="sub"></div>
     </div>
-    <button class="toggle" id="theme">Theme</button>
+    <div style="display:flex;gap:8px">
+      <button class="toggle" id="skin" aria-pressed="false">Skin: Classic</button>
+      <button class="toggle" id="theme">Theme</button>
+    </div>
   </header>
 
+  <div id="visual" hidden></div>
+  <div id="classic">
   <div class="grid kpis" id="kpis"></div>
 
   <section class="grid two">
@@ -173,6 +237,7 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
     <div class="tablewrap"><table id="requests"></table></div>
   </section>
 
+  </div>
   <footer id="foot"></footer>
 </div>
 
@@ -323,6 +388,7 @@ function renderProjects(){
   $("projects").innerHTML = cols + `<tbody>${rows}</tbody>`;
   $("projects").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
     const d = $("projects").querySelector(`tr.detail[data-for="${tr.dataset.i}"]`); d.hidden = !d.hidden;
+    tr.classList.toggle("open", !d.hidden);
   });
 }
 renderProjects();
@@ -332,7 +398,7 @@ const WK = (function(){
   const W = D.workers || {workers: [], weeks: [], flag_counts: {}};
   const FLAGS = [["all","All alerts"],["missing","No hours"],["over12","> 12 h days"],["over60","> 60 h weeks"],["avg48","Avg > 48 h"],["none","Everyone"]];
   let group = null, flag = "all", lastFocus = null;
-  const inGroup = () => W.workers.filter(w => w.group === group);
+  const inGroup = () => group === null ? W.workers : W.workers.filter(w => w.group === group);
   const match = (w, f) => f === "none" || (f === "all" ? w.flags.length > 0 : w.flags.includes(f));
   const alertHtml = w => w.flags.map(f => {
     if (f === "missing") return `<span class="alert">${w.missing == null ? "no hours in 16 wk" : `no hours ${w.missing} d`}</span>`;
@@ -357,9 +423,10 @@ const WK = (function(){
       `<tr><td colspan="${7 + W.weeks.length}" class="muted">No workers match.</td></tr>`}</tbody>`;
     $("wkNote").textContent = `${rows.length} of ${ws.length} worker(s) shown.`;
   }
-  function open(g){
-    group = g; flag = inGroup().some(w => w.flags.length) ? "all" : "none"; lastFocus = document.activeElement;
-    $("wkTitle").textContent = `${g} · workers and alerts`;
+  function open(g, f){
+    group = g ?? null; lastFocus = document.activeElement;
+    flag = f || (inGroup().some(w => w.flags.length) ? "all" : "none");
+    $("wkTitle").textContent = `${group === null ? "All projects" : group} · workers and alerts`;
     $("wkSearch").value = "";
     render();
     $("wkModal").hidden = false; document.body.style.overflow = "hidden";
@@ -408,6 +475,7 @@ const WK = (function(){
   $("hours").innerHTML = `<thead><tr><th>Project / yard</th><th class="num">Hours total</th><th class="num">Last 7 days</th><th>Booked</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>`;
   $("hours").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
     const d = $("hours").querySelector(`tr.detail[data-hfor="${tr.dataset.h}"]`); d.hidden = !d.hidden;
+    tr.classList.toggle("open", !d.hidden);
   });
   $("hours").querySelectorAll(".wkbtn").forEach(b => b.onclick = e => { e.stopPropagation(); WK.open(b.dataset.g); });
 })();
@@ -465,7 +533,117 @@ const WK = (function(){
     }).join("")}</tbody>`;
 })();
 
-$("foot").textContent = `Source: Ragic (SIDC10000) · aggregated daily, no personal data · snapshot ${D.date}`;
+// ---------- Visual skin ----------
+function renderVisual(){
+  const ws = D.workforce.status, total = D.workforce.total;
+  const real = D.projects.filter(p => !p.internal).slice().sort((a,b) => b.onsite - a.onsite || b.active - a.active);
+  const card = (inner, cls = "") => `<div class="card ${cls}">${inner}</div>`;
+  const sec = (title, sub, body) => `<section class="v-sec">${card(`<div class="v-title">${title}</div><p class="v-sub">${sub}</p>${body}`)}</section>`;
+
+  // 1. people today: one square per person
+  const ST = [["Yes","On site","working at a client’s shipyard"],["Workshop","In our workshops","working in Lithuania"],
+              ["Scheduled","Travelling soon","booked to leave for a project"],["Home","At home","resting between trips"],["Other","Other","no status in Ragic"]];
+  const color = {Yes:"var(--onsite)",Workshop:"var(--workshop)",Scheduled:"var(--scheduled)",Home:"var(--home)",Other:"var(--other)"};
+  const waffle = ST.map(([k,l]) => Array.from({length: ws[k] || 0}, () => `<i style="background:${color[k]}" title="${l}"></i>`).join("")).join("");
+  const people = `<p class="v-hero"><b>${fmt(ws.Yes||0)}</b> of our <b>${fmt(total)}</b> people are working on a project site today.</p>
+    <div class="waffle" role="img" aria-label="One square per person, coloured by where they are">${waffle}</div>
+    <div class="v-legend">${ST.filter(([k]) => ws[k]).map(([k,l,t]) => `<div><span class="sw" style="background:${color[k]}"></span><div><b>${fmt(ws[k])}</b>${l}<br><span class="t">${t}</span></div></div>`).join("")}</div>`;
+
+  // 2. project cards
+  const mixKeys = ["Yes","Workshop","Scheduled","Home"];
+  const cards = real.map(p => {
+    const s = p.staffing, st = p.status;
+    const short = s ? s.short[0] : null;
+    const pill = !s ? `<span class="pill none">– No staffing plan</span>`
+      : short < 0 ? `<span class="pill bad">✕ ${-short} ${-short === 1 ? "person" : "people"} missing</span>`
+      : `<span class="pill good">✓ Enough people</span>`;
+    let need = "";
+    if (s){
+      // places filled = required minus the shortages per position (surplus in one job does not fill another)
+      const req = s.required[0], filled = req + short, extra = req + s.balance[0] - filled;
+      const pct = req ? filled / req * 100 : 100;
+      need = `<div><div class="meter" title="${filled} of ${req} places filled"><span style="width:${pct}%;background:${short < 0 ? "var(--neg)" : "var(--pos)"}"></span></div>
+        <div class="v-small" style="margin-top:4px">${filled} of ${req} places filled this week${extra > 0 ? ` · ${extra} extra people in other jobs` : ""}</div></div>`;
+    }
+    const mixTot = mixKeys.reduce((a,k) => a + (st[k]||0), 0);
+    const mix = mixTot ? `<div class="meter" title="${mixKeys.filter(k=>st[k]).map(k=>`${ST.find(x=>x[0]===k)[1]}: ${st[k]}`).join(", ")}">${
+      mixKeys.filter(k=>st[k]).map(k=>`<span style="width:${st[k]/mixTot*100}%;background:${color[k]}"></span>`).join("")}</div>` : "";
+    const h = p.hours ? `<div class="v-small">🕒 <b style="color:var(--ink)">${fmt(p.hours.last7)} h</b> worked in the last 7 days</div>` : "";
+    const na = WK.groups.includes(p.name) ? WK.alertsIn(p.name) : 0;
+    const al = na ? `<button class="wkbtn has" data-g="${esc(p.name)}">⚠ ${na} worker${na>1?"s":""} to check</button>` : "";
+    return card(`<div class="head"><span class="name">${esc(p.name)}</span>${p.country ? `<span class="badge">${esc(p.country)}</span>` : ""}</div>
+      <div class="big">${p.onsite}<small>people on site</small></div>${mix}${pill}${need}${h}${al}`, "v-card" + (p.onsite || p.active ? "" : " dim"));
+  }).join("");
+
+  // 3. next 8 weeks
+  const planned = real.filter(p => p.staffing);
+  const weeksHead = `<div></div><div class="wk">${D.weeks.map((w,i)=>`<span>W${w}<br>${shortDate(D.week_starts[i])}</span>`).join("")}</div>`;
+  const dots = planned.map(p => `<div style="font-weight:650">${esc(p.name)}</div><div class="wk">${p.staffing.short.map((v,i) => {
+      const missing = p.staffing.by_position.filter(r => r.balance[i] < 0).map(r => `${r.position} ${r.balance[i]}`).join(", ");
+      return v < 0 ? `<span class="dot ${v <= -3 ? "bad" : "bad2"}" title="Week ${D.weeks[i]}: ${-v} missing (${missing})">${v}</span>`
+                   : `<span class="dot good" title="Week ${D.weeks[i]}: all positions filled">✓</span>`;
+    }).join("")}</div>`).join("");
+
+  // 4. hours
+  const hs = (D.hours || []).filter(g => g.last7 > 0).sort((a,b) => b.last7 - a.last7);
+  const hmax = Math.max(1, ...hs.map(g => g.last7));
+  const hbars = hs.map(g => `<div style="font-weight:650">${esc(g.name)}</div><div><div class="bar" style="width:${g.last7/hmax*100}%" title="${esc(g.name)}: ${fmt(g.last7)} h"></div></div><div class="val">${fmt(g.last7)} h</div>`).join("");
+  const posTot = {};
+  (D.hours || []).forEach(g => Object.entries(g.positions).forEach(([k,v]) => posTot[k] = (posTot[k]||0) + v));
+  let pos = Object.entries(posTot).sort((a,b) => b[1]-a[1]);
+  if (pos.length > 7){ const rest = pos.slice(6).reduce((a,[,v]) => a+v, 0); pos = pos.slice(0,6).concat([["Other jobs", rest]]); }
+  const pmax = Math.max(1, ...pos.map(([,v]) => v)), psum = pos.reduce((a,[,v]) => a+v, 0) || 1;
+  const pbars = pos.map(([k,v]) => `<div style="font-weight:650">${esc(k)}</div><div><div class="bar" style="width:${v/pmax*100}%;background:var(--workshop)" title="${esc(k)}: ${fmt(v)} h"></div></div><div class="val">${Math.round(v/psum*100)}%</div>`).join("");
+
+  // 5. alerts
+  const fc = (D.workers || {}).flag_counts || {};
+  const AL = [["missing","🕒","workers are on site but have no hours booked for 2+ working days","Maybe hours were not entered – money we cannot bill."],
+              ["over12","⏰","workers had days longer than 12 hours (last 4 weeks)","Dutch law allows max. 12 hours a day."],
+              ["over60","📅","workers had weeks over 60 hours (last 16 weeks)","Dutch law allows max. 60 hours a week."],
+              ["avg48","📈","workers average more than 48 hours a week (16 weeks)","The long-term legal average is 48 hours."]];
+  const alerts = AL.map(([k,ico,txt,why]) => card(`<span class="ico">${fc[k] ? ico : "✅"}</span><b>${fc[k]||0}</b><div>${txt}</div><div class="v-small">${why}</div>
+      ${fc[k] ? `<button class="wkbtn has" data-f="${k}">See who →</button>` : ""}`, "v-alert" + (fc[k] ? " on" : ""))).join("");
+
+  // 6. requests
+  const rq = D.requests.filter(r => r.week >= D.week || r.gap > 0);
+  const reqs = rq.map(r => `<div><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(r.project)}</b><span class="badge">week ${r.week}</span></div>
+      <div>${r.requested} × ${esc(r.position)}</div>
+      <div class="meter" title="${r.filled} of ${r.requested} found"><span style="width:${r.requested ? r.filled/r.requested*100 : 0}%;background:${r.gap ? "var(--scheduled)" : "var(--pos)"}"></span></div>
+      <div class="v-small">${r.gap ? `${r.filled} of ${r.requested} found · <b style="color:var(--neg)">${r.gap} still missing</b>` : `✓ all ${r.requested} found`}</div></div>`).join("");
+
+  $("visual").innerHTML =
+    sec("👷 Where are our people today?", "Every square is one person. The colour shows where they are right now.", people) +
+    sec("🏗️ Our projects right now", "Big number = people working there today. Green = enough people, red = some positions are still empty.", `<div class="v-cards">${cards}</div>`) +
+    sec("📆 Do we have enough people in the coming weeks?", "Each circle is one week. ✓ = every position filled. A red number = how many people are missing that week (darker red = 3 or more). Hover a circle to see which jobs.",
+        planned.length ? `<div class="v-scroll"><div class="v-dots">${weeksHead}${dots}</div></div>` : `<p class="muted">No staffing plans yet.</p>`) +
+    `<div class="grid two" style="margin-top:0">` +
+      sec("🕒 Work done in the last 7 days", "Hours written in the task lists. Longer bar = more work.", hs.length ? `<div class="v-hbar">${hbars}</div>` : `<p class="muted">No hours this week.</p>`) +
+      sec("🛠️ Which jobs do the work?", "Share of all hours since the projects started, by job.", pos.length ? `<div class="v-hbar">${pbars}</div>` : `<p class="muted">No hours yet.</p>`) +
+    `</div>` +
+    sec("🔎 Things to check", "Click “See who” to get the list. The codes open the worker’s card in Ragic.", `<div class="v-alerts">${alerts}</div>`) +
+    sec("🙋 Extra people asked for", "Requests from project managers. The bar shows how many people we already found.", rq.length ? `<div class="v-req">${reqs}</div>` : `<p class="muted">No open requests.</p>`);
+
+  $("visual").querySelectorAll(".wkbtn[data-g]").forEach(b => b.onclick = () => WK.open(b.dataset.g));
+  $("visual").querySelectorAll(".wkbtn[data-f]").forEach(b => b.onclick = () => WK.open(null, b.dataset.f));
+}
+
+(function(){
+  let rendered = false;
+  const set = skin => {
+    const visual = skin === "visual";
+    if (visual && !rendered){ renderVisual(); rendered = true; }
+    $("visual").hidden = !visual; $("classic").hidden = visual;
+    $("skin").textContent = visual ? "Skin: Visual" : "Skin: Classic";
+    $("skin").setAttribute("aria-pressed", String(visual));
+    try { localStorage.setItem("skin", skin); } catch(e){}
+  };
+  let start = "classic";
+  try { start = localStorage.getItem("skin") || "classic"; } catch(e){}
+  set(start);
+  $("skin").onclick = () => set($("visual").hidden ? "visual" : "classic");
+})();
+
+$("foot").textContent =`Source: Ragic (SIDC10000) · aggregated daily, no personal data · snapshot ${D.date}`;
 </script>
 </body>
 </html>
