@@ -347,7 +347,7 @@ def build_snapshot(raw, today):
                              "internal": True, "status": dict(st), "onsite": st.get("Yes", 0),
                              "active": sum(st.values()), "positions_onsite": dict(pos_onsite.get(name, Counter())),
                              "staffing": None, "not_in_project_list": True})
-    projects.sort(key=lambda p: (p["internal"], -p["active"], p["name"]))
+    projects.sort(key=lambda p: (p["internal"], -p["onsite"], -p["active"], p["name"]))
 
     # Additional manpower requests (current year, last 4 weeks and ahead)
     requests = []
@@ -363,6 +363,9 @@ def build_snapshot(raw, today):
 
     hours = aggregate_hours(raw.get("hours") or [], today, {p["name"] for p in projects})
     workers = aggregate_workers(people, raw.get("hours") or [], today)
+    names = {p["name"] for p in projects}
+    for w in workers["workers"]:
+        w["group"] = site_of(w["project"], names)  # same yard grouping as the hours table
     for p in projects:
         g = hours["by_name"].get(p["name"])
         p["hours"] = g  # {"total", "last7"} for a site (incl. its sub-projects) or a single project

@@ -14,17 +14,17 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0f1216; --card:#171b21; --ink:#e8ebef; --muted:#a3abb6; --faint:#7d8693; --line:#2a3039; --soft:#1e232a;
-    --accent:#6ea2ff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#6d7683; --other:#3a414b;
-    --neg:#ff7b72; --neg-bg:#3a1d1d; --neg-bg2:#5c2626; --pos:#4cc38a; --pos-bg:#173226; --zero-bg:#1e232a;
-    --shadow:none;
+    --bg:#0a0c0f; --card:#1e232c; --ink:#eef1f4; --muted:#b0b8c3; --faint:#8a939f; --line:#353d4a; --soft:#2a313c;
+    --accent:#7aaaff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#7a8492; --other:#454d58;
+    --neg:#ff8178; --neg-bg:#45222a; --neg-bg2:#6b2a2e; --pos:#55cc92; --pos-bg:#1b3a2c; --zero-bg:#2a313c;
+    --shadow:0 0 0 1px rgba(255,255,255,.03),0 4px 14px rgba(0,0,0,.45);
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0f1216; --card:#171b21; --ink:#e8ebef; --muted:#a3abb6; --faint:#7d8693; --line:#2a3039; --soft:#1e232a;
-  --accent:#6ea2ff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#6d7683; --other:#3a414b;
-  --neg:#ff7b72; --neg-bg:#3a1d1d; --neg-bg2:#5c2626; --pos:#4cc38a; --pos-bg:#173226; --zero-bg:#1e232a;
-  --shadow:none;
+  --bg:#0a0c0f; --card:#1e232c; --ink:#eef1f4; --muted:#b0b8c3; --faint:#8a939f; --line:#353d4a; --soft:#2a313c;
+  --accent:#7aaaff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#7a8492; --other:#454d58;
+  --neg:#ff8178; --neg-bg:#45222a; --neg-bg2:#6b2a2e; --pos:#55cc92; --pos-bg:#1b3a2c; --zero-bg:#2a313c;
+  --shadow:0 0 0 1px rgba(255,255,255,.03),0 4px 14px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);
@@ -96,6 +96,15 @@ a.code:hover{text-decoration:underline}
 .alert{display:inline-block;border-radius:6px;padding:1px 6px;margin:1px 2px 1px 0;font-size:12px;font-weight:600;background:var(--neg-bg);color:var(--neg)}
 .alert.warn{background:color-mix(in srgb,var(--scheduled) 18%,transparent);color:var(--scheduled)}
 td.hot{color:var(--neg);font-weight:700}
+.wkbtn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:7px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.wkbtn.has{border-color:var(--neg);color:var(--neg);background:var(--neg-bg)}
+.wkbtn:hover{filter:brightness(1.05)}
+[hidden]{display:none !important}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(5,8,12,.55);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto}
+.modal-box{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:100%;max-width:1150px;padding:18px 16px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
+.modal .tablewrap{max-height:62vh;overflow:auto}
+@media (max-width:520px){.modal{padding:8px}.modal-box{padding:14px 12px}}
 footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
 .toggle{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer}
 @media (max-width:520px){.kpi .value{font-size:24px}.bars .row{grid-template-columns:96px 1fr 36px}.div{grid-template-columns:96px 1fr}}
@@ -139,18 +148,6 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
   </section>
 
   <section class="card">
-    <h2>Workers · hours and alerts</h2>
-    <p class="hint">One row per worker, shown by position and a fixed code instead of the name. Click the code to open the worker’s card in Ragic (Ragic login required). Alerts: <b>no hours</b> = on site but no hours booked for 2+ working days · <b>&gt;12 h</b> days and <b>&gt;60 h</b> weeks (last 4 / 16 weeks) · <b>avg &gt;48 h</b> per week over 16 weeks.</p>
-    <div class="filters">
-      <div class="chips" id="wkChips"></div>
-      <select id="wkProject" aria-label="Project"></select>
-      <input id="wkSearch" type="search" placeholder="Search code or position" aria-label="Search">
-    </div>
-    <div class="tablewrap"><table id="workers"></table></div>
-    <p class="hint" id="wkNote" style="margin-top:8px"></p>
-  </section>
-
-  <section class="card">
     <h2>Staffing outlook</h2>
     <p class="hint">Red = people missing (sum of shortages over all positions), green = every position filled (number = spare people). Hover a cell for the positions. Only projects with a staffing plan in Ragic are shown.</p>
     <div class="tablewrap"><table class="heat" id="heat"></table></div>
@@ -177,6 +174,22 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
   </section>
 
   <footer id="foot"></footer>
+</div>
+
+<div class="modal" id="wkModal" hidden role="dialog" aria-modal="true" aria-labelledby="wkTitle">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="wkTitle">Workers</h2>
+      <button class="toggle" id="wkClose" aria-label="Close">Close ✕</button>
+    </div>
+    <p class="hint">Workers are shown by position and a fixed code instead of the name – click the code to open the worker’s card in Ragic (Ragic login required). Alerts: <b>no hours</b> = on site but no hours booked for 2+ working days · <b>&gt;12 h</b> days (last 4 weeks) · <b>&gt;60 h</b> weeks and <b>avg &gt;48 h</b>/week (last 16 weeks).</p>
+    <div class="filters">
+      <div class="chips" id="wkChips"></div>
+      <input id="wkSearch" type="search" placeholder="Search code, position or project" aria-label="Search">
+    </div>
+    <div class="tablewrap"><table id="workers"></table></div>
+    <p class="hint" id="wkNote" style="margin:8px 0 0"></p>
+  </div>
 </div>
 
 <script>
@@ -314,41 +327,13 @@ function renderProjects(){
 }
 renderProjects();
 
-// ---------- hours ----------
-(function(){
-  const hs = D.hours || [];
-  if (!hs.length){ $("hoursHint").textContent = "No booked hours found."; return; }
-  $("hoursHint").textContent = `“Hours real” from the task lists since each project started: ${fmt(D.hours_total)} h in total, ${fmt(D.hours_last7)} h in the last 7 days. Yards running several projects (e.g. SPG) include all their projects. Click a row for the split by project and position.`;
-  const bars = (entries, tot) => entries.map(([k,v]) => `<div class="row"><div class="name" title="${esc(k)}">${esc(k)}</div>
-      <div class="track"><span style="width:${(v/tot*100).toFixed(1)}%;background:var(--onsite)"></span></div><div class="val">${fmt(v)}</div></div>`).join("");
-  let rows = "";
-  hs.forEach((g,i) => {
-    const pos = Object.entries(g.positions);
-    const top = pos.slice(0,3).map(([k,v]) => `${esc(k)} ${Math.round(v/g.total*100)}%`).join(" · ");
-    const subs = g.subs.length > 1 || g.subs[0]?.name !== g.name
-      ? `<table><thead><tr><th>Project</th><th class="num">Hours</th><th class="num">Last 7 days</th></tr></thead><tbody>${
-          g.subs.map(s=>`<tr><td>${esc(s.name)}</td><td class="num">${fmt(s.total)}</td><td class="num">${s.last7?fmt(s.last7):'<span class="faint">–</span>'}</td></tr>`).join("")}</tbody></table>`
-      : `<p class="muted">Single project.</p>`;
-    rows += `<tr class="proj" data-h="${i}"><td><b>${esc(g.name)}</b></td><td class="num"><b>${fmt(g.total)}</b></td>
-      <td class="num">${g.last7 ? fmt(g.last7) : '<span class="faint">–</span>'}</td><td class="muted">${shortDate(g.first)} – ${dateTxt(g.last)}</td><td class="muted">${top}</td></tr>
-      <tr class="detail" data-hfor="${i}" hidden><td colspan="5"><div class="detailgrid"><div>${subs}</div>
-        <div><div class="muted" style="font-size:12px;margin-bottom:4px">Hours by position</div><div class="bars">${bars(pos, pos[0][1])}</div></div></div></td></tr>`;
-  });
-  $("hours").innerHTML = `<thead><tr><th>Project / yard</th><th class="num">Hours total</th><th class="num">Last 7 days</th><th>Booked</th><th>Main positions</th></tr></thead><tbody>${rows}</tbody>`;
-  $("hours").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
-    const d = $("hours").querySelector(`tr.detail[data-hfor="${tr.dataset.h}"]`); d.hidden = !d.hidden;
-  });
-})();
-
-// ---------- workers ----------
-(function(){
+// ---------- workers overlay ----------
+const WK = (function(){
   const W = D.workers || {workers: [], weeks: [], flag_counts: {}};
-  const ws = W.workers;
   const FLAGS = [["all","All alerts"],["missing","No hours"],["over12","> 12 h days"],["over60","> 60 h weeks"],["avg48","Avg > 48 h"],["none","Everyone"]];
-  let flag = "all";
-  const count = f => f === "all" ? ws.filter(w=>w.flags.length).length : f === "none" ? ws.length : (W.flag_counts[f] || 0);
-  const projects = [...new Set(ws.map(w=>w.project))].sort();
-  $("wkProject").innerHTML = `<option value="">All projects</option>` + projects.map(p=>`<option>${esc(p)}</option>`).join("");
+  let group = null, flag = "all", lastFocus = null;
+  const inGroup = () => W.workers.filter(w => w.group === group);
+  const match = (w, f) => f === "none" || (f === "all" ? w.flags.length > 0 : w.flags.includes(f));
   const alertHtml = w => w.flags.map(f => {
     if (f === "missing") return `<span class="alert">${w.missing == null ? "no hours in 16 wk" : `no hours ${w.missing} d`}</span>`;
     if (f === "over12") return `<span class="alert warn">${w.days_over}× &gt;12 h (max ${w.max_day})</span>`;
@@ -357,24 +342,74 @@ renderProjects();
     return "";
   }).join("");
   function render(){
-    $("wkChips").innerHTML = FLAGS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${k===flag}">${l} <b>${count(k)}</b></button>`).join("");
+    const ws = inGroup();
+    $("wkChips").innerHTML = FLAGS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${k===flag}">${l} <b>${ws.filter(w=>match(w,k)).length}</b></button>`).join("");
     $("wkChips").querySelectorAll(".chip").forEach(b => b.onclick = () => { flag = b.dataset.f; render(); });
-    const proj = $("wkProject").value, q = $("wkSearch").value.trim().toLowerCase();
-    const rows = ws.filter(w => (flag === "none" || (flag === "all" ? w.flags.length : w.flags.includes(flag)))
-      && (!proj || w.project === proj) && (!q || (w.code + " " + w.position).toLowerCase().includes(q)));
-    const shown = rows.slice(0, 400);
+    const q = $("wkSearch").value.trim().toLowerCase();
+    const rows = ws.filter(w => match(w, flag) && (!q || (w.code + " " + w.position + " " + w.project).toLowerCase().includes(q)));
     $("workers").innerHTML = `<thead><tr><th>Worker</th><th>Project</th><th>Status</th>${W.weeks.map(k=>`<th class="num">${k}</th>`).join("")}
       <th class="num">Last 7 d</th><th>Last booking</th><th class="num">Total h</th><th>Alerts</th></tr></thead><tbody>${
-      shown.map(w => `<tr><td>${w.rid ? `<a class="code" href="${esc(D.ragic_people_url + w.rid)}" target="_blank" rel="noopener">${esc(w.code)} ↗</a>` : esc(w.code)}${w.sub ? ' <span class="faint">sub</span>' : ""}</td>
+      rows.map(w => `<tr><td>${w.rid ? `<a class="code" href="${esc(D.ragic_people_url + w.rid)}" target="_blank" rel="noopener">${esc(w.code)} ↗</a>` : esc(w.code)}${w.sub ? ' <span class="faint">sub</span>' : ""}</td>
         <td>${esc(w.project)}</td><td class="muted">${esc(w.status === "Yes" ? "On site" : w.status)}</td>
         ${w.weeks.map(h=>`<td class="num${h > 60 ? " hot" : ""}">${h || '<span class="faint">–</span>'}</td>`).join("")}
         <td class="num">${w.h7 || '<span class="faint">–</span>'}</td><td class="muted">${w.last ? shortDate(w.last) : "–"}</td>
         <td class="num">${fmt(w.total)}</td><td>${alertHtml(w) || '<span class="faint">–</span>'}</td></tr>`).join("") ||
-      `<tr><td colspan="${8 + W.weeks.length}" class="muted">No workers match.</td></tr>`}</tbody>`;
-    $("wkNote").textContent = rows.length > shown.length ? `Showing the first ${shown.length} of ${rows.length} workers – use the filters to narrow down.` : `${rows.length} worker(s) shown.`;
+      `<tr><td colspan="${7 + W.weeks.length}" class="muted">No workers match.</td></tr>`}</tbody>`;
+    $("wkNote").textContent = `${rows.length} of ${ws.length} worker(s) shown.`;
   }
-  $("wkProject").onchange = render; $("wkSearch").oninput = render;
-  render();
+  function open(g){
+    group = g; flag = inGroup().some(w => w.flags.length) ? "all" : "none"; lastFocus = document.activeElement;
+    $("wkTitle").textContent = `${g} · workers and alerts`;
+    $("wkSearch").value = "";
+    render();
+    $("wkModal").hidden = false; document.body.style.overflow = "hidden";
+    $("wkClose").focus();
+  }
+  function close(){
+    $("wkModal").hidden = true; document.body.style.overflow = "";
+    if (lastFocus) lastFocus.focus();
+  }
+  $("wkSearch").oninput = render;
+  $("wkClose").onclick = close;
+  $("wkModal").addEventListener("click", e => { if (e.target === $("wkModal")) close(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("wkModal").hidden) close(); });
+  const alertsIn = g => W.workers.filter(w => w.group === g && w.flags.length).length;
+  const peopleIn = g => W.workers.filter(w => w.group === g).length;
+  return {open, alertsIn, peopleIn, groups: [...new Set(W.workers.map(w => w.group))]};
+})();
+
+// ---------- hours ----------
+(function(){
+  const hs = (D.hours || []).slice();
+  // yards/projects that have workers but no booked hours yet still need a row to reach their alerts
+  WK.groups.filter(g => !hs.some(h => h.name === g) && WK.alertsIn(g))
+    .forEach(g => hs.push({name: g, total: 0, last7: 0, first: "", last: "", subs: [], positions: {}}));
+  if (!hs.length){ $("hoursHint").textContent = "No booked hours found."; return; }
+  $("hoursHint").textContent = `“Hours real” from the task lists since each project started: ${fmt(D.hours_total)} h in total, ${fmt(D.hours_last7)} h in the last 7 days. Yards running several projects (e.g. SPG) include all their projects. Click a row for the split by project and position, and for the worker alerts.`;
+  const bars = (entries, tot) => entries.map(([k,v]) => `<div class="row"><div class="name" title="${esc(k)}">${esc(k)}</div>
+      <div class="track"><span style="width:${(v/tot*100).toFixed(1)}%;background:var(--onsite)"></span></div><div class="val">${fmt(v)}</div></div>`).join("");
+  let rows = "";
+  hs.forEach((g,i) => {
+    const pos = Object.entries(g.positions);
+    const top = g.total ? pos.slice(0,3).map(([k,v]) => `${esc(k)} ${Math.round(v/g.total*100)}%`).join(" · ") : "";
+    const subs = !g.subs.length ? `<p class="muted">No hours booked yet.</p>`
+      : g.subs.length > 1 || g.subs[0].name !== g.name
+      ? `<table><thead><tr><th>Project</th><th class="num">Hours</th><th class="num">Last 7 days</th></tr></thead><tbody>${
+          g.subs.map(s=>`<tr><td>${esc(s.name)}</td><td class="num">${fmt(s.total)}</td><td class="num">${s.last7?fmt(s.last7):'<span class="faint">–</span>'}</td></tr>`).join("")}</tbody></table>`
+      : `<p class="muted">Single project.</p>`;
+    const na = WK.alertsIn(g.name), np = WK.peopleIn(g.name);
+    const btn = np ? `<button class="wkbtn${na ? " has" : ""}" data-g="${esc(g.name)}">${na ? `⚠ ${na} alert${na>1?"s":""} · ` : ""}Workers (${np})</button>` : "";
+    rows += `<tr class="proj" data-h="${i}"><td><b>${esc(g.name)}</b></td><td class="num"><b>${g.total ? fmt(g.total) : "–"}</b></td>
+      <td class="num">${g.last7 ? fmt(g.last7) : '<span class="faint">–</span>'}</td><td class="muted">${g.first ? `${shortDate(g.first)} – ${dateTxt(g.last)}` : "–"}</td>
+      <td class="muted">${top}</td><td>${na ? `<span class="alert">⚠ ${na}</span>` : '<span class="faint">–</span>'}</td></tr>
+      <tr class="detail" data-hfor="${i}" hidden><td colspan="6"><div class="detailgrid"><div>${subs}${btn ? `<div style="margin-top:12px">${btn}</div>` : ""}</div>
+        <div><div class="muted" style="font-size:12px;margin-bottom:4px">Hours by position</div><div class="bars">${pos.length ? bars(pos, pos[0][1]) : '<span class="faint">–</span>'}</div></div></div></td></tr>`;
+  });
+  $("hours").innerHTML = `<thead><tr><th>Project / yard</th><th class="num">Hours total</th><th class="num">Last 7 days</th><th>Booked</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>`;
+  $("hours").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
+    const d = $("hours").querySelector(`tr.detail[data-hfor="${tr.dataset.h}"]`); d.hidden = !d.hidden;
+  });
+  $("hours").querySelectorAll(".wkbtn").forEach(b => b.onclick = e => { e.stopPropagation(); WK.open(b.dataset.g); });
 })();
 
 // ---------- heatmap ----------
