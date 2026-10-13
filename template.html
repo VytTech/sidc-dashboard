@@ -84,6 +84,18 @@ svg text{fill:var(--muted);font-size:11px}
 .detailgrid{display:grid;grid-template-columns:minmax(200px,280px) 1fr;gap:20px;padding:6px 0}
 @media (max-width:700px){.detailgrid{grid-template-columns:1fr}}
 .detail table td,.detail table th{padding:5px 6px;background:transparent}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.chip b{font-variant-numeric:tabular-nums}
+.filters select,.filters input{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:5px 8px;font:inherit;font-size:13px;min-width:0}
+.filters input{flex:1 1 160px}
+a.code{color:var(--accent);text-decoration:none;font-weight:600}
+a.code:hover{text-decoration:underline}
+.alert{display:inline-block;border-radius:6px;padding:1px 6px;margin:1px 2px 1px 0;font-size:12px;font-weight:600;background:var(--neg-bg);color:var(--neg)}
+.alert.warn{background:color-mix(in srgb,var(--scheduled) 18%,transparent);color:var(--scheduled)}
+td.hot{color:var(--neg);font-weight:700}
 footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
 .toggle{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer}
 @media (max-width:520px){.kpi .value{font-size:24px}.bars .row{grid-template-columns:96px 1fr 36px}.div{grid-template-columns:96px 1fr}}
@@ -124,6 +136,18 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
     <h2>Hours booked</h2>
     <p class="hint" id="hoursHint"></p>
     <div class="tablewrap"><table id="hours"></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Workers · hours and alerts</h2>
+    <p class="hint">One row per worker, shown by position and a fixed code instead of the name. Click the code to open the worker’s card in Ragic (Ragic login required). Alerts: <b>no hours</b> = on site but no hours booked for 2+ working days · <b>&gt;12 h</b> days and <b>&gt;60 h</b> weeks (last 4 / 16 weeks) · <b>avg &gt;48 h</b> per week over 16 weeks.</p>
+    <div class="filters">
+      <div class="chips" id="wkChips"></div>
+      <select id="wkProject" aria-label="Project"></select>
+      <input id="wkSearch" type="search" placeholder="Search code or position" aria-label="Search">
+    </div>
+    <div class="tablewrap"><table id="workers"></table></div>
+    <p class="hint" id="wkNote" style="margin-top:8px"></p>
   </section>
 
   <section class="card">
@@ -314,6 +338,43 @@ renderProjects();
   $("hours").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
     const d = $("hours").querySelector(`tr.detail[data-hfor="${tr.dataset.h}"]`); d.hidden = !d.hidden;
   });
+})();
+
+// ---------- workers ----------
+(function(){
+  const W = D.workers || {workers: [], weeks: [], flag_counts: {}};
+  const ws = W.workers;
+  const FLAGS = [["all","All alerts"],["missing","No hours"],["over12","> 12 h days"],["over60","> 60 h weeks"],["avg48","Avg > 48 h"],["none","Everyone"]];
+  let flag = "all";
+  const count = f => f === "all" ? ws.filter(w=>w.flags.length).length : f === "none" ? ws.length : (W.flag_counts[f] || 0);
+  const projects = [...new Set(ws.map(w=>w.project))].sort();
+  $("wkProject").innerHTML = `<option value="">All projects</option>` + projects.map(p=>`<option>${esc(p)}</option>`).join("");
+  const alertHtml = w => w.flags.map(f => {
+    if (f === "missing") return `<span class="alert">${w.missing == null ? "no hours in 16 wk" : `no hours ${w.missing} d`}</span>`;
+    if (f === "over12") return `<span class="alert warn">${w.days_over}× &gt;12 h (max ${w.max_day})</span>`;
+    if (f === "over60") return `<span class="alert warn">${w.weeks_over} wk &gt;60 h</span>`;
+    if (f === "avg48") return `<span class="alert warn">avg ${w.avg16} h/wk</span>`;
+    return "";
+  }).join("");
+  function render(){
+    $("wkChips").innerHTML = FLAGS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${k===flag}">${l} <b>${count(k)}</b></button>`).join("");
+    $("wkChips").querySelectorAll(".chip").forEach(b => b.onclick = () => { flag = b.dataset.f; render(); });
+    const proj = $("wkProject").value, q = $("wkSearch").value.trim().toLowerCase();
+    const rows = ws.filter(w => (flag === "none" || (flag === "all" ? w.flags.length : w.flags.includes(flag)))
+      && (!proj || w.project === proj) && (!q || (w.code + " " + w.position).toLowerCase().includes(q)));
+    const shown = rows.slice(0, 400);
+    $("workers").innerHTML = `<thead><tr><th>Worker</th><th>Project</th><th>Status</th>${W.weeks.map(k=>`<th class="num">${k}</th>`).join("")}
+      <th class="num">Last 7 d</th><th>Last booking</th><th class="num">Total h</th><th>Alerts</th></tr></thead><tbody>${
+      shown.map(w => `<tr><td>${w.rid ? `<a class="code" href="${esc(D.ragic_people_url + w.rid)}" target="_blank" rel="noopener">${esc(w.code)} ↗</a>` : esc(w.code)}${w.sub ? ' <span class="faint">sub</span>' : ""}</td>
+        <td>${esc(w.project)}</td><td class="muted">${esc(w.status === "Yes" ? "On site" : w.status)}</td>
+        ${w.weeks.map(h=>`<td class="num${h > 60 ? " hot" : ""}">${h || '<span class="faint">–</span>'}</td>`).join("")}
+        <td class="num">${w.h7 || '<span class="faint">–</span>'}</td><td class="muted">${w.last ? shortDate(w.last) : "–"}</td>
+        <td class="num">${fmt(w.total)}</td><td>${alertHtml(w) || '<span class="faint">–</span>'}</td></tr>`).join("") ||
+      `<tr><td colspan="${8 + W.weeks.length}" class="muted">No workers match.</td></tr>`}</tbody>`;
+    $("wkNote").textContent = rows.length > shown.length ? `Showing the first ${shown.length} of ${rows.length} workers – use the filters to narrow down.` : `${rows.length} worker(s) shown.`;
+  }
+  $("wkProject").onchange = render; $("wkSearch").oninput = render;
+  render();
 })();
 
 // ---------- heatmap ----------

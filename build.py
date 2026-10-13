@@ -10,6 +10,7 @@
 import base64
 import datetime as dt
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -136,12 +137,107 @@ def site_of(project, names):
     return project
 
 
+MAX_DAY, MAX_WEEK, MAX_AVG16 = 12, 60, 48   # NL Working Hours Act limits
+MISSING_DAYS = 2                             # working days (Mon-Sat) on site without booked hours
+
+
+def person_name(p):
+    return ((p.get("First, Last names") or p.get("First&#44; Last names") or "").strip())
+
+
+def worker_code(position, key):
+    """Stable pseudonym such as 'Welder · 3F9A' (keyed hash, the name cannot be recovered)."""
+    secret = (os.environ.get("DATA_KEY") or os.environ.get("PAGE_PASSWORD") or "local-preview").encode()
+    tag = hmac.new(secret, str(key).encode(), hashlib.sha256).hexdigest()[:4].upper()
+    return f"{position or 'Worker'} · {tag}"
+
+
+def working_days_between(after, until):
+    """Mon-Sat days in (after, until]."""
+    n, d = 0, after + dt.timedelta(days=1)
+    while d <= until:
+        n += d.weekday() != 6
+        d += dt.timedelta(days=1)
+    return n
+
+
+def aggregate_workers(people, rows, today):
+    """Per-worker hours and flags. Names are used only to join rows to people and are not output."""
+    yesterday = today - dt.timedelta(days=1)
+    d7, d28, d112 = (today - dt.timedelta(days=n) for n in (7, 28, 112))
+    weeks4 = [(today - dt.timedelta(weeks=i)).isocalendar()[:2] for i in range(3, -1, -1)]
+
+    daily = defaultdict(lambda: defaultdict(float))  # name -> date -> hours
+    total = defaultdict(float)
+    for row in rows:
+        if len(row) < 6 or not row[5]:
+            continue
+        day, hrs = ragic_date(row[4]), num(row[3])
+        if not day or not hrs or day > today.isoformat():
+            continue
+        name = row[5].strip()
+        total[name] += hrs
+        if day > d112.isoformat():
+            daily[name][day] += hrs
+
+    by_name = {person_name(p): p for p in people if person_name(p)}
+    out = []
+    for name in set(by_name) | {n for n, days in daily.items() if any(d > d28.isoformat() for d in days)}:
+        p = by_name.get(name, {})
+        status = (p.get("At work") or "").strip() or ("—" if p else "Not in active HR")
+        if status == "Terminate":
+            continue
+        pos = (p.get("Position") or "").strip()
+        days = {dt.date.fromisoformat(k): v for k, v in daily.get(name, {}).items()}
+        week_h = defaultdict(float)
+        for d, v in days.items():
+            week_h[d.isocalendar()[:2]] += v
+        last = max(days) if days else None
+        recent = {d: v for d, v in days.items() if d > d28}
+        w = {
+            "code": worker_code(pos, p.get("_ragicId") or name),
+            "rid": p.get("_ragicId"),
+            "position": pos or "—",
+            "project": (p.get("Project") or "").strip() or "(unassigned)",
+            "status": status,
+            "sub": (p.get("Subcontractor") or "") == "Yes",
+            "weeks": [round(week_h.get(k, 0)) for k in weeks4],
+            "h7": round(sum(v for d, v in days.items() if d > d7)),
+            "h28": round(sum(recent.values())),
+            "days28": len(recent),
+            "max_day": round(max(recent.values()), 1) if recent else 0,
+            "days_over": sum(1 for v in recent.values() if v > MAX_DAY),
+            "weeks_over": sum(1 for v in week_h.values() if v > MAX_WEEK),
+            "avg16": round(sum(days.values()) / 16, 1),
+            "total": round(total.get(name, 0)),
+            "last": last.isoformat() if last else "",
+        }
+        flags = []
+        if status == "Yes":
+            gap = working_days_between(last, yesterday) if last else None
+            w["missing"] = gap
+            if gap is None or gap >= MISSING_DAYS:
+                flags.append("missing")
+        if w["days_over"]:
+            flags.append("over12")
+        if w["weeks_over"]:
+            flags.append("over60")
+        if w["avg16"] > MAX_AVG16:
+            flags.append("avg48")
+        w["flags"] = flags
+        out.append(w)
+    out.sort(key=lambda w: (not w["flags"], w["project"], w["position"], w["code"]))
+    return {"weeks": [f"W{wk}" for _, wk in weeks4], "workers": out,
+            "flag_counts": dict(Counter(f for w in out for f in w["flags"]))}
+
+
 def aggregate_hours(rows, today, names):
     """Sum 'Hours real' from Task list sub by site -> sub-project and by position (all time, up to today)."""
     today_s, week_ago = today.isoformat(), (today - dt.timedelta(days=7)).isoformat()
     groups = {}
     total = last7 = 0.0
-    for sub, proj_t, pos, h, day in rows:
+    for row in rows:
+        sub, proj_t, pos, h, day = row[:5]
         day = ragic_date(day)
         hrs = num(h)
         if not day or day > today_s or not hrs:
@@ -266,6 +362,7 @@ def build_snapshot(raw, today):
     requests.sort(key=lambda r: (r["week"], r["project"]))
 
     hours = aggregate_hours(raw.get("hours") or [], today, {p["name"] for p in projects})
+    workers = aggregate_workers(people, raw.get("hours") or [], today)
     for p in projects:
         g = hours["by_name"].get(p["name"])
         p["hours"] = g  # {"total", "last7"} for a site (incl. its sub-projects) or a single project
@@ -289,6 +386,9 @@ def build_snapshot(raw, today):
         "hours": hours["groups"],
         "hours_total": hours["total"],
         "hours_last7": hours["last7"],
+        "workers": workers,
+        "ragic_people_url": f"{os.environ.get('RAGIC_BASE', 'https://eu4.ragic.com').rstrip('/')}/"
+                            f"{os.environ.get('RAGIC_ACCOUNT', 'SIDC10000')}/planing/19/",
     }
 
 
@@ -343,6 +443,15 @@ def diff(prev, cur):
         elif old["filled"] != r["filled"]:
             add("request", f"Request filled {old['filled']} → {r['filled']} of {r['requested']}: {r['project']} {r['position']} (W{r['week']})",
                 r["filled"] - old["filled"])
+
+    labels = {"missing": "Workers on site without booked hours", "over12": "Workers with days over 12 h",
+              "over60": "Workers with weeks over 60 h", "avg48": "Workers averaging over 48 h/week"}
+    pf = (prev.get("workers") or {}).get("flag_counts")
+    if pf is not None:
+        cf = cur["workers"]["flag_counts"]
+        for k, label in labels.items():
+            if cf.get(k, 0) != pf.get(k, 0):
+                add("hours", f"{label}: {pf.get(k, 0)} → {cf.get(k, 0)}", cf.get(k, 0) - pf.get(k, 0))
     return {"since": prev["date"], "items": items}
 
 
@@ -362,7 +471,8 @@ def main():
     snap = build_snapshot(raw, today)
     history = [h for h in load_history(hist_dir) if h["date"] < snap["date"]]
     prev = history[-1] if history else None
-    save_snapshot(hist_dir, snap)
+    # per-worker rows are only needed for today's page; history keeps the flag counts
+    save_snapshot(hist_dir, dict(snap, workers={"flag_counts": snap["workers"]["flag_counts"]}))
 
     page = dict(snap)
     page["changes"] = diff(prev, snap)

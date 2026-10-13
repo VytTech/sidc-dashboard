@@ -28,19 +28,21 @@ SHEETS = {
                  "_subtable_1003224", "_subtable_1003520"],
         "sub_keep": {"_subtable_1003224": ["Year", "Position", "At work", "Dep week", "Ariv week", "Read week"]},
     },
-    # People: only status fields, no personal data is requested
+    # People: status fields + name and record id. The name is only used on the build machine to
+    # match hour rows to people; the page gets a pseudonymous code and a link to the Ragic card.
     "people": {
         "path": "planing/19",
         "params": {"subtables": "0", "where": "1001432,eq,Yes",
-                   "fetchDomainIds": ["1001432", "1001370", "1000119", "1000764", "1009378", "1000917"]},
-        "keep": ["Active", "Project", "Position", "At work", "Subcontractor", "Type"],
+                   "fetchDomainIds": ["1001432", "1001370", "1000119", "1000764", "1009378", "1000917", "1000018"]},
+        "keep": ["_ragicId", "Active", "Project", "Position", "At work", "Subcontractor", "Type",
+                 "First, Last names", "First&#44; Last names"],
     },
     # Booked hours (Task list sub): one row per worker/day/task. Only the fields needed for sums.
     "hours": {
         "path": "sub/20",
         "params": {"subtables": "0",
-                   "fetchDomainIds": ["1003457", "1009449", "1009445", "1000166", "1000180"]},
-        "keep": ["Project-sub", "Project-T", "Position", "Hours real", "Data task sub"],
+                   "fetchDomainIds": ["1003457", "1009449", "1009445", "1000166", "1000180", "1000192"]},
+        "keep": ["Project-sub", "Project-T", "Position", "Hours real", "Data task sub", "Employee-sub"],
         "compact": True,
     },
     # Additional manpower requests
@@ -84,7 +86,7 @@ def fetch_sheet(base, account, key, cfg):
         if isinstance(data, dict) and "status" in data and data.get("status") != "SUCCESS" and not any(
                 k.isdigit() for k in data):
             raise RuntimeError(f"Ragic error for {cfg['path']}: {str(data)[:300]}")
-        page = [r for k, r in data.items() if k.isdigit()]
+        page = [dict(r, _ragicId=int(k)) for k, r in data.items() if k.isdigit()]
         for r in page:
             r = trim_record(r, cfg.get("keep"), cfg.get("sub_keep"))
             # large sheets: store rows as lists in "keep" order to keep the raw file small
