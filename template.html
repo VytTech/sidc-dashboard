@@ -121,6 +121,12 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
   </section>
 
   <section class="card">
+    <h2>Hours booked</h2>
+    <p class="hint" id="hoursHint"></p>
+    <div class="tablewrap"><table id="hours"></table></div>
+  </section>
+
+  <section class="card">
     <h2>Staffing outlook</h2>
     <p class="hint">Red = people missing (sum of shortages over all positions), green = every position filled (number = spare people). Hover a cell for the positions. Only projects with a staffing plan in Ragic are shown.</p>
     <div class="tablewrap"><table class="heat" id="heat"></table></div>
@@ -191,6 +197,7 @@ const kpis = [
   ["Active projects", real.length, null],
   ["Positions short · W" + D.week, -shortNow, "var(--neg)"],
   ["Open manpower requests", openReq.reduce((s,r)=>s+r.gap,0), null, null, `${openReq.length} request(s)`],
+  ["Hours booked · last 7 days", D.hours_last7 || 0, null, null, `${fmt(D.hours_total)} h since start`],
 ];
 $("kpis").innerHTML = kpis.map(([l,v,c,d,note]) => `
   <div class="card kpi"><div class="label">${c?`<span class="dot" style="background:${c}"></span>`:""}${esc(l)}</div>
@@ -273,7 +280,7 @@ function renderProjects(){
       <td class="num"><b>${st.Yes||0}</b></td><td class="num">${st.Workshop||""}</td><td class="num">${st.Scheduled||""}</td><td class="num">${st.Home||""}</td>
       <td class="num">${s ? s.required[0] : `<span class="faint">–</span>`}</td>
       <td class="num">${s ? (s.short[0] < 0 ? `<span class="bal n" title="net ${sign(s.balance[0])}">${s.short[0]}</span>` : `<span class="bal ${balCls(s.balance[0])}">${sign(s.balance[0])}</span>`) : `<span class="faint">–</span>`}</td>
-      <td>${spark(p.name)}</td><td class="num">${p.used_hours ? fmt(p.used_hours) : `<span class="faint">–</span>`}</td></tr>
+      <td>${spark(p.name)}</td><td class="num">${p.hours ? fmt(p.hours.total) : `<span class="faint">–</span>`}</td></tr>
       <tr class="detail" data-for="${i}" hidden><td colspan="11">${detail(p)}</td></tr>`;
   });
   $("projects").innerHTML = cols + `<tbody>${rows}</tbody>`;
@@ -282,6 +289,32 @@ function renderProjects(){
   });
 }
 renderProjects();
+
+// ---------- hours ----------
+(function(){
+  const hs = D.hours || [];
+  if (!hs.length){ $("hoursHint").textContent = "No booked hours found."; return; }
+  $("hoursHint").textContent = `“Hours real” from the task lists since each project started: ${fmt(D.hours_total)} h in total, ${fmt(D.hours_last7)} h in the last 7 days. Yards running several projects (e.g. SPG) include all their projects. Click a row for the split by project and position.`;
+  const bars = (entries, tot) => entries.map(([k,v]) => `<div class="row"><div class="name" title="${esc(k)}">${esc(k)}</div>
+      <div class="track"><span style="width:${(v/tot*100).toFixed(1)}%;background:var(--onsite)"></span></div><div class="val">${fmt(v)}</div></div>`).join("");
+  let rows = "";
+  hs.forEach((g,i) => {
+    const pos = Object.entries(g.positions);
+    const top = pos.slice(0,3).map(([k,v]) => `${esc(k)} ${Math.round(v/g.total*100)}%`).join(" · ");
+    const subs = g.subs.length > 1 || g.subs[0]?.name !== g.name
+      ? `<table><thead><tr><th>Project</th><th class="num">Hours</th><th class="num">Last 7 days</th></tr></thead><tbody>${
+          g.subs.map(s=>`<tr><td>${esc(s.name)}</td><td class="num">${fmt(s.total)}</td><td class="num">${s.last7?fmt(s.last7):'<span class="faint">–</span>'}</td></tr>`).join("")}</tbody></table>`
+      : `<p class="muted">Single project.</p>`;
+    rows += `<tr class="proj" data-h="${i}"><td><b>${esc(g.name)}</b></td><td class="num"><b>${fmt(g.total)}</b></td>
+      <td class="num">${g.last7 ? fmt(g.last7) : '<span class="faint">–</span>'}</td><td class="muted">${shortDate(g.first)} – ${dateTxt(g.last)}</td><td class="muted">${top}</td></tr>
+      <tr class="detail" data-hfor="${i}" hidden><td colspan="5"><div class="detailgrid"><div>${subs}</div>
+        <div><div class="muted" style="font-size:12px;margin-bottom:4px">Hours by position</div><div class="bars">${bars(pos, pos[0][1])}</div></div></div></td></tr>`;
+  });
+  $("hours").innerHTML = `<thead><tr><th>Project / yard</th><th class="num">Hours total</th><th class="num">Last 7 days</th><th>Booked</th><th>Main positions</th></tr></thead><tbody>${rows}</tbody>`;
+  $("hours").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
+    const d = $("hours").querySelector(`tr.detail[data-hfor="${tr.dataset.h}"]`); d.hidden = !d.hidden;
+  });
+})();
 
 // ---------- heatmap ----------
 (function(){

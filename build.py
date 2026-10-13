@@ -128,6 +128,54 @@ def save_snapshot(hdir, snap):
 
 # ---------- aggregation ----------
 
+def site_of(project, names):
+    """'NL-SPG-716' -> 'SPG' when SPG is itself a project (a yard running several projects)."""
+    parts = project.split("-")
+    if len(parts) >= 3 and parts[1] in names and parts[1] != project:
+        return parts[1]
+    return project
+
+
+def aggregate_hours(rows, today, names):
+    """Sum 'Hours real' from Task list sub by site -> sub-project and by position (all time, up to today)."""
+    today_s, week_ago = today.isoformat(), (today - dt.timedelta(days=7)).isoformat()
+    groups = {}
+    total = last7 = 0.0
+    for sub, proj_t, pos, h, day in rows:
+        day = ragic_date(day)
+        hrs = num(h)
+        if not day or day > today_s or not hrs:
+            continue  # future-dated or empty task rows
+        proj = (sub or "").strip() or (proj_t or "").strip() or "(no project)"
+        site = site_of(proj, names)
+        recent = day > week_ago
+        g = groups.setdefault(site, {"name": site, "total": 0.0, "last7": 0.0, "first": day, "last": day,
+                                     "subs": defaultdict(lambda: [0.0, 0.0]), "positions": defaultdict(float)})
+        g["total"] += hrs
+        g["first"], g["last"] = min(g["first"], day), max(g["last"], day)
+        g["subs"][proj][0] += hrs
+        g["positions"][(pos or "").strip() or "Other"] += hrs
+        total += hrs
+        if recent:
+            g["last7"] += hrs
+            g["subs"][proj][1] += hrs
+            last7 += hrs
+    out = []
+    for g in sorted(groups.values(), key=lambda g: -g["total"]):
+        out.append({"name": g["name"], "total": round(g["total"]), "last7": round(g["last7"]),
+                    "first": g["first"], "last": g["last"],
+                    "subs": [{"name": k, "total": round(v[0]), "last7": round(v[1])}
+                             for k, v in sorted(g["subs"].items(), key=lambda kv: -kv[1][0])],
+                    "positions": {k: round(v) for k, v in sorted(g["positions"].items(), key=lambda kv: -kv[1])}})
+    by_name = {}
+    for g in out:
+        by_name[g["name"]] = {"total": g["total"], "last7": g["last7"]}
+        for s in g["subs"]:
+            if s["name"] != g["name"]:
+                by_name.setdefault(s["name"], {"total": s["total"], "last7": s["last7"]})
+    return {"groups": out, "by_name": by_name, "total": round(total), "last7": round(last7)}
+
+
 def build_snapshot(raw, today):
     year, week, _ = today.isocalendar()
     weeks = [w for w in range(week, week + HORIZON) if w <= 52]
@@ -217,6 +265,11 @@ def build_snapshot(raw, today):
                          "gap": max(0, req_n - filled)})
     requests.sort(key=lambda r: (r["week"], r["project"]))
 
+    hours = aggregate_hours(raw.get("hours") or [], today, {p["name"] for p in projects})
+    for p in projects:
+        g = hours["by_name"].get(p["name"])
+        p["hours"] = g  # {"total", "last7"} for a site (incl. its sub-projects) or a single project
+
     # company-wide staffing balance per position (current week)
     pos_balance = Counter()
     for p in projects:
@@ -233,6 +286,9 @@ def build_snapshot(raw, today):
                       "by_position": {k: dict(v) for k, v in sorted(by_position.items(), key=lambda kv: -sum(kv[1].values()))}},
         "position_balance_now": dict(sorted(pos_balance.items(), key=lambda kv: kv[1])),
         "requests": requests,
+        "hours": hours["groups"],
+        "hours_total": hours["total"],
+        "hours_last7": hours["last7"],
     }
 
 
@@ -301,7 +357,7 @@ def trend(history, cur):
 def main():
     raw_dir, hist_dir, out_html = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
     raw = {n: json.loads((raw_dir / f"{n}.json").read_text(encoding="utf-8"))
-           for n in ("projects", "people", "requests")}
+           for n in ("projects", "people", "requests", "hours") if (raw_dir / f"{n}.json").exists()}
     today = dt.date.fromisoformat(os.environ["BUILD_DATE"]) if os.environ.get("BUILD_DATE") else dt.date.today()
     snap = build_snapshot(raw, today)
     history = [h for h in load_history(hist_dir) if h["date"] < snap["date"]]

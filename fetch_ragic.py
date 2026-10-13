@@ -35,6 +35,14 @@ SHEETS = {
                    "fetchDomainIds": ["1001432", "1001370", "1000119", "1000764", "1009378", "1000917"]},
         "keep": ["Active", "Project", "Position", "At work", "Subcontractor", "Type"],
     },
+    # Booked hours (Task list sub): one row per worker/day/task. Only the fields needed for sums.
+    "hours": {
+        "path": "sub/20",
+        "params": {"subtables": "0",
+                   "fetchDomainIds": ["1003457", "1009449", "1009445", "1000166", "1000180"]},
+        "keep": ["Project-sub", "Project-T", "Position", "Hours real", "Data task sub"],
+        "compact": True,
+    },
     # Additional manpower requests
     "requests": {
         "path": "planing/52",
@@ -77,10 +85,15 @@ def fetch_sheet(base, account, key, cfg):
                 k.isdigit() for k in data):
             raise RuntimeError(f"Ragic error for {cfg['path']}: {str(data)[:300]}")
         page = [r for k, r in data.items() if k.isdigit()]
-        records.extend(trim_record(r, cfg.get("keep"), cfg.get("sub_keep")) for r in page)
+        for r in page:
+            r = trim_record(r, cfg.get("keep"), cfg.get("sub_keep"))
+            # large sheets: store rows as lists in "keep" order to keep the raw file small
+            records.append([r.get(k) for k in cfg["keep"]] if cfg.get("compact") else r)
         if len(page) < limit:
             return records
         offset += limit
+        if offset % 20000 == 0:
+            print(f"  {cfg['path']}: {offset} records so far", flush=True)
 
 
 def main():
@@ -94,7 +107,7 @@ def main():
     for name, cfg in SHEETS.items():
         recs = fetch_sheet(base, account, key, cfg)
         (out_dir / f"{name}.json").write_text(json.dumps(recs, ensure_ascii=False), encoding="utf-8")
-        sample_keys = sorted(recs[0].keys()) if recs else []
+        sample_keys = cfg["keep"] if cfg.get("compact") else (sorted(recs[0].keys()) if recs else [])
         print(f"{name}: {len(recs)} records; fields: {sample_keys}")
 
 
