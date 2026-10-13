@@ -59,7 +59,7 @@ jobs:
             --short --remember 30 --config false --salt 148c2eefb40e83de4e7d71f52692849b \
             --template-title "SIDC Daily Overview" \
             --template-instructions "Enter the password to open the dashboard." \
-            --template-button "Open" --template-color-primary "#1f5fbf"
+            --template-button "Open" --template-color-primary "#1f5fbf" --template-color-secondary "#eef0f3"
           touch public/.nojekyll
 
       - uses: actions/configure-pages@v5
