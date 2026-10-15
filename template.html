@@ -288,7 +288,7 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
       <button class="toggle" id="mgmt" hidden>🔒 Management</button>
       <button class="toggle" id="skin" aria-pressed="false">Skin: Classic</button>
       <button class="toggle" id="theme">Theme</button>
-      <button class="toggle" id="lang" title="Kalba / language">LT</button>
+      <select class="toggle notr" id="lang" title="Language / Kalba / Язык" aria-label="Language"><option value="en">EN</option><option value="lt">LT</option><option value="ru">RU</option></select>
     </div>
   </header>
 
@@ -403,11 +403,11 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
 <script>
 const D = /*__DATA__*/null;
 const $ = id => document.getElementById(id);
-// ---------- language: EN (default) / LT. The page is written in English; in LT mode every text that appears
-// on the page (also later in tables and overlays) is translated with the phrase list below. ----------
+// ---------- language: EN (default) / LT / RU. The page is written in English; in LT or RU mode every text that
+// appears on the page (also later in tables and overlays) is translated with the phrase lists below. ----------
 let LANG = "en";
-try { LANG = localStorage.getItem("lang") === "lt" ? "lt" : "en"; } catch(e){}
-const LOC = LANG === "lt" ? "lt-LT" : "en-GB";
+try { const l = localStorage.getItem("lang"); if (l === "lt" || l === "ru") LANG = l; } catch(e){}
+const LOC = {lt: "lt-LT", ru: "ru-RU"}[LANG] || "en-GB";
 const LT_RULES = [   // patterns with numbers first
   [/in (\d+) manpower request\(s\)/g, "$1 užklausose"], [/\((\d+) wk left\)/g, "(liko $1 sav.)"],
   [/(\d+) alerts? · /g, "$1 įsp. · "], [/(\d+) workers? to check/g, "$1 darb. patikrinti"],
@@ -535,22 +535,152 @@ const LT = {
   // footer
   "Source:":"Šaltinis:", "aggregated daily":"atnaujinama kasdien", "names only in manpower request details":"vardai tik užklausų detalėse", "snapshot":"duomenys",
 };
-let LT_RE = null;
+const RU_RULES = [
+  [/in (\d+) manpower request\(s\)/g, "в $1 заявках"], [/\((\d+) wk left\)/g, "(осталось $1 нед.)"],
+  [/(\d+) alerts? · /g, "$1 предупр. · "], [/(\d+) workers? to check/g, "$1 раб. проверить"],
+  [/(\d+) of (\d+) worker\(s\) shown\./g, "Показано $1 из $2 раб."],
+  [/currently (\d+) days? of history: /g, "сейчас дней истории: $1; "], [/(\d+) hours ago/g, "$1 ч. назад"], [/(\d+) days ago/g, "$1 дн. назад"],
+];
+const RU = {
+  "Daily Overview":"Ежедневный обзор", "Skin: Classic":"Вид: классический", "Skin: Visual":"Вид: графический", "Theme":"Тема",
+  "🔒 Management":"🔒 Руководство", "🔓 Management · Lock":"🔓 Руководство · закрыть", "Management mode":"Режим руководства",
+  "Labour cost figures are only shown with the management password. They stay visible in this browser tab until you close it or press “Lock”.":"Затраты на труд показываются только с паролем руководства. Они видны в этой вкладке браузера, пока вы её не закроете или не нажмёте «закрыть».",
+  "Management password":"Пароль руководства", "Unlock":"Открыть", "Checking…":"Проверка…", "Wrong password.":"Неверный пароль.",
+  "Could not unlock in this browser.":"В этом браузере открыть не удалось.", "Show labour cost (management password)":"Показать затраты на труд (пароль руководства)",
+  "Hide labour cost again":"Снова скрыть затраты на труд", "Print or save this section as PDF":"Распечатать или сохранить раздел в PDF",
+  "Week starting":"Неделя с", "Week":"Неделя", "updated":"обновлено", "Data may be outdated":"Данные могут быть устаревшими",
+  "– the last update was":"– последнее обновление было", "The daily update from Ragic has probably failed.":"Ежедневное обновление из Ragic, вероятно, не удалось.",
+  // attention
+  "⚠ Attention required":"⚠ Требует внимания", "The most urgent points from all sections below. Click one for details.":"Самое срочное из всех разделов. Нажмите на пункт, чтобы увидеть подробности.",
+  "still needed":"ещё нужно", "Manpower request for":"Заявка на", "is overdue":"просрочена", "Needed in":"Нужно в", "(this week)":"(эта неделя)", "(next week)":"(следующая неделя)",
+  "selected people are not planned in Human Rotation":"отобранных людей нет в плане Human Rotation", "selected person is not planned in Human Rotation":"отобранного человека нет в плане Human Rotation",
+  "rotation changed by hand or not planned yet":"ротация изменена вручную или ещё не запланирована",
+  "people below the PM’s plan this week":"чел. меньше плана РП на этой неделе", "workers on site without a timesheet for":"раб. на объекте без табеля за",
+  "Hours may be missing – cannot be billed":"Часы могут отсутствовать – нельзя выставить счёт", "workers had weeks over 60 hours":"раб. имели недели более 60 ч",
+  "Dutch law: max. 60 h a week (last 16 weeks)":"Закон NL: макс. 60 ч в неделю (последние 16 нед.)", "workers booked hours at another location":"раб. записали часы в другом месте",
+  "HR card or timesheet may be wrong":"Возможна ошибка в карточке HR или табеле", "active people at home without a project":"активных человек дома без проекта",
+  "Available to assign":"Можно назначить",
+  // KPIs
+  "On site":"На объекте", "In workshops":"В цехах", "Scheduled to travel":"Запланирован выезд", "At home (rotation)":"Дома (ротация)", "incl.":"в т. ч.",
+  "without a project":"без проекта", "Unassigned resources (at home)":"Неназначенные ресурсы (дома)", "Unassigned resources":"Неназначенные ресурсы",
+  "active · at home · no project":"активные · дома · без проекта", "Active workforce":"Активный персонал", "Active projects":"Активные проекты",
+  "Below PM plan":"Меньше плана РП", "vs. staffing plan, not requests":"по плану РП, не по заявкам", "People still needed":"Ещё нужно людей",
+  "Hours booked":"Записанные часы", "(unassigned)":"(не назначено)", "30 days":"30 дн.", "90 days":"90 дн.", "180 days":"180 дн.", "last 30 days":"последние 30 дн.", "Labour cost":"Затраты на труд", "h since start":"ч с начала",
+  "since start (estimate)":"с начала (оценка)", "no change vs previous day":"без изменений со вчера", "vs previous day":"со вчера",
+  // changes + trend
+  "What changed":"Что изменилось", "This is the first snapshot. From tomorrow this list shows what changed since the previous update.":"Это первый срез данных. Начиная с завтра здесь будет видно, что изменилось с прошлого обновления.",
+  "No earlier data to compare yet.":"Пока нет ранних данных для сравнения.", "Compared with":"По сравнению с", "No changes since the previous update.":"С прошлого обновления изменений нет.",
+  "People on site":"Людей на объекте", "New active project":"Новый активный проект", "Project no longer active":"Проект больше не активен", "on site":"на объекте",
+  "staffing balance":"баланс персонала", "New manpower request":"Новая заявка на персонал", "Reserved":"Зарезервировано",
+  "Workers without timesheet entries last week":"Работники без табеля на прошлой неделе", "Workers booking hours at another location":"Работники, записывающие часы в другом месте",
+  "Workers with days over 12 h":"Работники с днями более 12 ч", "Workers with weeks over 60 h":"Работники с неделями более 60 ч", "Workers averaging over 48 h/week":"Работники в среднем более 48 ч/нед.",
+  "people":"люди", "project":"проект", "staffing":"персонал", "request":"заявка", "hours":"часы",
+  "Trend":"Динамика", "One point per daily update. Switch lines on and off and choose the period; history builds up with every update.":"Одна точка – одно ежедневное обновление. Линии можно включать и выключать, выбирать период; история накапливается с каждым обновлением.",
+  "The chart appears after the second daily update (":"График появится после второго ежедневного обновления (", "on site today).":"сегодня на объекте).",
+  "Switch on at least one line.":"Включите хотя бы одну линию.", "At home":"Дома",
+  // projects
+  "Projects":"Проекты", "Project":"Проект", "Period":"Период", "Workshop":"Цех", "Scheduled":"Запланированы", "Home":"Дома", "Required":"Нужно",
+  "Short / spare":"Нехватка / избыток", "(ended)":"(завершён)", "Internal / other assignments":"Внутренние / другие назначения", "not in Ragic":"нет в Ragic",
+  "This yard does not book timesheets in Ragic – no hours, cost or worker alerts":"Эта верфь не ведёт табель в Ragic – нет часов, затрат и предупреждений",
+  "On site now:":"Сейчас на объекте:", "Nobody on site right now.":"Сейчас на объекте никого нет.", "No staffing plan for this project in Ragic.":"Для этого проекта в Ragic нет плана персонала.",
+  "Planned by PM (balance)":"План РП (баланс)", "net":"итого",
+  "All active projects. Click a row for the position breakdown and the 8-week staffing plan. Short / spare = people booked minus the":"Все активные проекты. Нажмите на строку – увидите должности и план персонала на 8 недель. Нехватка / избыток = запланированные люди минус",
+  "project manager’s staffing plan":"план персонала руководителя проекта",
+  "this week (red = fewer than planned in at least one job). This is not a request for new people – see “Additional manpower requests”.":"на этой неделе (красный = хотя бы по одной должности меньше плана). Это не заявка на новых людей – см. «Заявки на дополнительный персонал».",
+  // hours
+  "“Hours real” from the task lists since each project started:":"«Hours real» из списков задач с начала каждого проекта:", "and about":"и около", "labour cost":"затрат на труд",
+  "in total;":"всего;", "in the last 30 days.":"за последние 30 дн.",
+  "Yards running several projects (e.g. SPG) include all their projects. Click a row for the split by project and position, and for the worker alerts.":"Верфи с несколькими проектами (напр., SPG) включают все свои проекты. Нажмите на строку – увидите разбивку по проектам и должностям и предупреждения по работникам.",
+  "🔒 Labour cost is shown in management mode only.":"🔒 Затраты на труд показываются только в режиме руководства.", "Labour cost is an":"Затраты на труд – это", "estimate":"оценка",
+  ": own staff = net hourly rate from Qualification ×":": свои работники = чистая часовая ставка из Qualification ×", "in Lithuania (income tax, Sodra) or ×":"в Литве (подоходный налог, Sodra) или ×",
+  "on business trips (assumes":"в командировках (считается, что", "of net pay is salary, the rest tax-free per diem); subcontractors =":"чистого дохода – зарплата, остальное – необлагаемые суточные); субподрядчики =",
+  "€/h invoice.":"€/ч по счёту.", "of own-staff hours use the worker’s own rate, the rest the average rate of the position.":"часов своих работников считаются по личной ставке, остальные – по средней ставке должности.",
+  "Not in Ragic:":"Нет в Ragic:", "have people on site but do not book timesheets in Ragic, so they have no hours, cost or worker alerts here.":"имеют людей на объекте, но не ведут табель в Ragic, поэтому здесь нет их часов, затрат и предупреждений.",
+  "No booked hours found.":"Записанных часов не найдено.", "Project / yard":"Проект / верфь", "Hours total":"Часов всего", "Hours last 30 days":"Часы за 30 дн.",
+  "Cost last 30 days":"Затраты за 30 дн.", "Booked":"Записано", "Main positions":"Основные должности", "Worker alerts":"Предупреждения", "Total":"Всего",
+  "Since the start":"С начала", "Hours":"Часы", "Last 30 days":"Последние 30 дн.", "No hours booked in this period.":"За этот период часов не записано.",
+  "and labour cost":"и затраты на труд", "by position":"по должностям", "No hours in this period.":"За этот период часов нет.", "no hours":"нет часов", "Workers":"Работники",
+  // staffing outlook + workforce
+  "Staffing outlook":"Прогноз персонала", "Compared with the":"По сравнению с", "in Ragic, not with requests for new people. Red = fewer people than planned (sum over all jobs), green = every job staffed as planned (number = more than planned). Hover a cell for the positions. Only projects with a staffing plan in Ragic are shown.":"в Ragic, а не с заявками на новых людей. Красный = людей меньше плана (сумма по всем должностям), зелёный = все должности по плану (число = больше плана). Наведите на ячейку – увидите должности. Показаны только проекты с планом персонала в Ragic.",
+  "No staffing plans found.":"Планы персонала не найдены.", "Total shortage":"Всего не хватает", "short:":"не хватает:",
+  "Workforce by position":"Персонал по должностям", "active people":"активных человек", "own staff":"свои работники", "via subcontractors":"через субподрядчиков", "Other":"Другое",
+  "Balance by position · this week":"Баланс по должностям · эта неделя", "Sum over all planned projects. Negative = positions still to be filled.":"Сумма по всем запланированным проектам. Отрицательное = ещё не заполненные места.",
+  "All planned positions are filled this week.":"На этой неделе все запланированные места заполнены.",
+  // requests
+  "Additional manpower requests":"Заявки на дополнительный персонал",
+  "Requests from the last 4 weeks and upcoming weeks. The request is only the instruction – every selected person is checked in":"Заявки за последние 4 недели и на ближайшие недели. Заявка – только указание: каждый отобранный человек проверяется в",
+  ", because rotation can be changed by hand.":", так как ротацию можно изменить вручную.", "= selected and still planned for this project in rotation ·":"= отобраны и всё ещё запланированы на этот проект в ротации ·",
+  "= arrival confirmed ·":"= приезд подтверждён ·", "= already on site ·":"= уже на объекте ·", "= requested minus reserved ·":"= запрошено минус зарезервировано ·",
+  "= selected people that Human Rotation does not (yet) have on this project – other project, no project or missing. Click a row to see who.":"= отобранные люди, которых в Human Rotation (ещё) нет на этом проекте – другой проект, без проекта или отсутствуют. Нажмите на строку – увидите, кто.",
+  "No recent requests.":"Новых заявок нет.", "Week needed":"Нужная неделя", "Position":"Должность", "Requested":"Запрошено", "Confirmed":"Подтверждено", "Working":"Работают",
+  "Still needed":"Ещё нужно", "Status":"Статус", "Open":"Открыта", "Unconfirmed":"Не подтверждена", "Completed":"Выполнена", "now":"сейчас", "not in rotation":"нет в ротации",
+  "Selected person":"Отобранный человек", "Now in Human Rotation":"Сейчас в Human Rotation", "Ready to travel":"Готов к выезду", "✓ working on site":"✓ работает на объекте",
+  "arrival confirmed":"приезд подтверждён", "planned, not confirmed":"запланирован, не подтверждён", "rotation has another project":"в ротации другой проект",
+  "no project in rotation":"в ротации без проекта", "not in Human Rotation":"нет в Human Rotation", "Nobody selected yet.":"Пока никто не отобран.",
+  "Compare with the PM’s staffing plan":"Сравнить с планом персонала РП", "Open the request in Ragic":"Открыть заявку в Ragic",
+  "selected person(s) are not planned for this project in Human Rotation (other project, no project or missing)":"отобранных людей нет в плане этого проекта в Human Rotation (другой проект, без проекта или отсутствуют)",
+  // workers overlay
+  "Close ✕":"Закрыть ✕", "Close":"Закрыть", "All alerts":"Все предупреждения", "No timesheet last week":"Нет табеля за прошлую неделю", "Other location":"Другое место",
+  "> 12 h days":"> 12 ч в день", "> 60 h weeks":"> 60 ч в неделю", "Avg > 48 h":"Сред. > 48 ч", "Everyone":"Все", "Search code, position or project":"Поиск кода, должности или проекта",
+  "Worker":"Работник", "Last 30 days h":"Ч за 30 дн.", "Last booking":"Последняя запись", "Total h":"Всего ч", "Alerts":"Предупреждения", "No workers match.":"Подходящих работников нет.",
+  "All projects":"Все проекты", "· workers and alerts":"· работники и предупреждения", "no timesheet":"нет табеля", "hours booked at":"часы записаны на", "(max":"(макс.", "avg":"сред.", "h/wk":"ч/нед.",
+  "Workers are shown by position and a fixed code instead of the name – click the code to open the worker’s card in Ragic (Ragic login required). Alerts:":"Работники показаны по должности и постоянному коду вместо имени – нажмите на код, чтобы открыть карточку работника в Ragic (нужен вход в Ragic). Предупреждения:",
+  "= on site but nothing booked in the last completed week (yards without Ragic timesheets are skipped) ·":"= на объекте, но за последнюю полную неделю ничего не записано (верфи без табеля в Ragic не проверяются) ·",
+  "other location":"другое место", "= hours booked at a different yard than the project in HR ·":"= часы записаны на другой верфи, чем проект в HR ·",
+  "days (last 4 weeks) ·":"дни (последние 4 нед.) ·", "weeks and":"недели и", "/week (last 16 weeks).":"/нед. (последние 16 нед.).",
+  // positions overlay
+  "Missing positions":"Недостающие должности", "· compared with the PM’s staffing plan":"· по сравнению с планом персонала РП",
+  "Numbers compare people booked on the project with the":"Числа сравнивают запланированных на проект людей с", "in Ragic – they are":"в Ragic – это",
+  "requests for new people. Red = fewer than planned, green = more than planned, ✓ = as planned. Hover a number to see the planned count.":"заявки на новых людей. Красный = меньше плана, зелёный = больше плана, ✓ = по плану. Наведите на число – увидите плановое количество.",
+  "not":"не", "This week":"На этой неделе", "the plan still has empty places for:":"в плане ещё есть свободные места:", "✓ Every place in the plan is filled this week":"✓ На этой неделе все места в плане заполнены",
+  "· now":"· сейчас", "Planned":"По плану", "fewer than planned":"меньше плана", "more than planned":"больше плана", "as planned":"по плану",
+  // visual skin
+  "👷 Where are our people today?":"👷 Где сегодня наши люди?", "Every square is a small group of people. The colour shows where they are right now.":"Каждый квадрат – небольшая группа людей. Цвет показывает, где они сейчас.",
+  "of our":"из наших", "people are working on a project site today.":"человек сегодня работают на объектах.", "■ 1 square =":"■ 1 квадрат =",
+  "working at a client’s shipyard":"работают на верфи клиента", "In our workshops":"В наших цехах", "working in Lithuania":"работают в Литве", "Travelling soon":"Скоро выезжают",
+  "booked to leave for a project":"запланирован выезд на проект", "resting between trips":"отдыхают между поездками", "no status in Ragic":"без статуса в Ragic",
+  "🏗️ Our projects right now":"🏗️ Наши проекты сейчас", "Big number = people working there today. Green = staffed as the project manager planned, red = fewer people than planned in some jobs.":"Большое число = люди, работающие там сегодня. Зелёный = персонал по плану руководителя проекта, красный = по некоторым должностям меньше людей, чем запланировано.",
+  "people on site":"чел. на объекте", "– No staffing plan":"– Нет плана персонала", "below PM plan":"меньше плана РП", "✓ Matches PM plan":"✓ Соответствует плану РП",
+  "places in the PM’s plan filled this week":"мест в плане РП заполнено на этой неделе", "more than planned in other jobs":"больше плана по другим должностям",
+  "worked in the last 30 days":"отработано за последние 30 дн.", "labour cost so far":"затраты на труд на сегодня", "(estimate)":"(оценка)", "Show which jobs are below the PM’s plan":"Показать, по каким должностям меньше плана РП",
+  "“Below plan” is measured against the":"«Меньше плана» считается по", "in Ragic (how many people each job should have).":"в Ragic (сколько людей должно быть на каждой должности).",
+  "It is":"Это", "an official request for new people – real requests are listed in":"официальная заявка на новых людей – настоящие заявки перечислены в разделе", "further down.":"ниже.",
+  "📆 People vs. the PM’s plan – coming weeks":"📆 Люди по плану РП – ближайшие недели",
+  "Each circle is one week. ✓ = every job staffed as planned. A red number = how many people fewer than planned that week (darker red = 3 or more). Click a project to see the jobs.":"Каждый круг – одна неделя. ✓ = все должности по плану. Красное число = на сколько людей меньше плана в эту неделю (темнее = 3 и больше). Нажмите на проект – увидите должности.",
+  "No staffing plans yet.":"Планов персонала пока нет.", "Show positions":"Показать должности", "all positions filled":"все места заполнены", "missing":"не хватает",
+  "🕒 Work done in the last 30 days":"🕒 Выполненная работа за последние 30 дн.", "Hours written in the task lists. Longer bar = more work.":"Часы из списков задач. Длиннее полоса = больше работы.",
+  "No hours in the last 30 days.":"За последние 30 дн. часов нет.", "🛠️ Which jobs do the work?":"🛠️ Какие должности выполняют работу?", "Share of all hours since the projects started, by job.":"Доля всех часов с начала проектов по должностям.",
+  "Other jobs":"Другие должности", "No hours yet.":"Часов пока нет.", "🔎 Things to check":"🔎 Что проверить", "Click “See who” to get the list. The codes open the worker’s card in Ragic.":"Нажмите «Кто», чтобы получить список. Коды открывают карточку работника в Ragic.",
+  "workers were on site but have no timesheet for last week":"раб. были на объекте, но без табеля за прошлую неделю",
+  "Maybe hours were not entered – money we cannot bill. Yards that do not use Ragic timesheets are not checked.":"Возможно, часы не внесены – деньги, которые мы не сможем выставить. Верфи без табеля в Ragic не проверяются.",
+  "workers booked hours at another location than their project in Ragic":"раб. записали часы не в том месте, где их проект в Ragic", "Either the worker moved or the HR card / timesheet is wrong.":"Либо работник переехал, либо ошибка в карточке HR / табеле.",
+  "workers had days longer than 12 hours (last 4 weeks)":"раб. имели дни длиннее 12 ч (последние 4 нед.)", "Dutch law allows max. 12 hours a day.":"Закон NL допускает макс. 12 ч в день.",
+  "workers had weeks over 60 hours (last 16 weeks)":"раб. имели недели более 60 ч (последние 16 нед.)", "Dutch law allows max. 60 hours a week.":"Закон NL допускает макс. 60 ч в неделю.",
+  "workers average more than 48 hours a week (16 weeks)":"раб. в среднем работают более 48 ч в неделю (16 нед.)", "The long-term legal average is 48 hours.":"Долгосрочная законная норма – 48 ч.",
+  "See who →":"Кто →", "“Extra people asked for”":"«Запрошенный дополнительный персонал»", "“Additional manpower requests”":"«Заявки на дополнительный персонал»", "🙋 Extra people asked for":"🙋 Запрошенный дополнительный персонал", "Requests from project managers. The bar shows how many people we already found.":"Заявки руководителей проектов. Полоса показывает, сколько людей уже найдено.",
+  "found":"найдено", "✓ all":"✓ все", "confirmed":"подтверждено", "working":"работают", "not planned in rotation":"не запланированы в ротации", "No open requests.":"Открытых заявок нет.", "week":"неделя",
+  // footer
+  "Source:":"Источник:", "aggregated daily":"обновляется ежедневно", "names only in manpower request details":"имена только в деталях заявок", "snapshot":"данные",
+};
+const TR_DICT = LANG === "lt" ? LT : LANG === "ru" ? RU : null;
+const TR_RULES = LANG === "lt" ? LT_RULES : LANG === "ru" ? RU_RULES : [];
+const TR_DAYS = LANG === "ru" ? "$1 дн." : "$1 d.";
+let TR_RE = null;
 function trText(s){
   if (!s || !/[A-Za-z]/.test(s)) return s;
-  for (const [re, to] of LT_RULES) s = s.replace(re, to);
-  if (!LT_RE){
-    const keys = Object.keys(LT).sort((a, b) => b.length - a.length).map(k => {
+  for (const [re, to] of TR_RULES) s = s.replace(re, to);
+  if (!TR_RE){
+    const keys = Object.keys(TR_DICT).sort((a, b) => b.length - a.length).map(k => {
       const e = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       return (/^\w/.test(k) ? "(?<![\\w])" : "") + e + (/\w$/.test(k) ? "(?![\\w])" : "");
     });
-    LT_RE = new RegExp(keys.join("|"), "g");
+    TR_RE = new RegExp(keys.join("|"), "g");
   }
-  return s.replace(LT_RE, m => LT[m] ?? m).replace(/\b(\d+) days\b/g, "$1 d.");
+  return s.replace(TR_RE, m => TR_DICT[m] ?? m).replace(/\b(\d+) days\b/g, TR_DAYS);
 }
 const TR_DONE = new WeakMap();   // node/element -> text already translated (never translate twice)
 function translate(root){
-  if (LANG !== "lt") return;
+  if (!TR_DICT) return;
   const skip = n => n.parentElement && n.parentElement.closest("script,style,.notr");
   const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n = w.nextNode(); n; n = w.nextNode()){
@@ -1241,10 +1371,10 @@ function printCard(card){
 addPdfButtons($("classic"));
 $("foot").textContent =`Source: Ragic (SIDC10000) · aggregated daily · names only in manpower request details · snapshot ${D.date}`;
 // language switch + translation of everything rendered now and later (tables, overlays, visual skin)
-$("lang").textContent = LANG === "lt" ? "EN" : "LT";
-$("lang").onclick = () => { try { localStorage.setItem("lang", LANG === "lt" ? "en" : "lt"); } catch(e){} location.reload(); };
-if (LANG === "lt"){
-  document.documentElement.lang = "lt";
+$("lang").value = LANG;
+$("lang").onchange = () => { try { localStorage.setItem("lang", $("lang").value); } catch(e){} location.reload(); };
+if (TR_DICT){
+  document.documentElement.lang = LANG;
   translate(document.body);
   new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n =>
     n.nodeType === 1 ? translate(n) : n.nodeType === 3 && n.parentElement && translate(n.parentElement))))
