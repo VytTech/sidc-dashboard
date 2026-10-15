@@ -32,7 +32,7 @@ SHEETS = {
     # match hour rows to people; the page gets a pseudonymous code and a link to the Ragic card.
     "people": {
         "path": "planing/19",
-        "params": {"subtables": "0", "where": "1001432,eq,Yes",
+        "params": {"subtables": "0",
                    "fetchDomainIds": ["1001432", "1001370", "1000119", "1000764", "1009378", "1000917", "1000018"]},
         "keep": ["_ragicId", "Active", "Project", "Position", "At work", "Subcontractor", "Type",
                  "First, Last names", "First&#44; Last names"],
@@ -41,15 +41,38 @@ SHEETS = {
     "hours": {
         "path": "sub/20",
         "params": {"subtables": "0",
-                   "fetchDomainIds": ["1003457", "1009449", "1009445", "1000166", "1000180", "1000192"]},
-        "keep": ["Project-sub", "Project-T", "Position", "Hours real", "Data task sub", "Employee-sub"],
+                   "fetchDomainIds": ["1003457", "1009449", "1009445", "1000166", "1000180", "1000192", "1009444"]},
+        "keep": ["Project-sub", "Project-T", "Position", "Hours real", "Data task sub", "Employee-sub", "Company-T"],
         "compact": True,
     },
-    # Additional manpower requests
+    # Net hourly rate per worker (used only on the build machine for project labour cost)
+    "qualification": {
+        "path": "qualification/1",
+        "params": {"subtables": "0", "fetchDomainIds": ["1000018", "1015773", "1000119"]},
+        "keep": ["Emploee", "Hour rate", "Position"],
+    },
+    # Which companies are subcontractors (invoiced at a flat rate)
+    "companies": {
+        "path": "planing/10",
+        "params": {"subtables": "0"},
+        "keep": ["Company", "Subcontractor"],
+    },
+    # Additional manpower requests + the people selected for them (names shown only in request details).
+    # Ragic "People" = still needed (Number minus selected people), not "filled".
     "requests": {
         "path": "planing/52",
-        "params": {"subtables": "0"},
-        "keep": ["Project", "Year", "Position", "Date", "Number", "People", "Week", "Status"],
+        "params": {"subtables": "1"},
+        "keep": ["_ragicId", "Project", "Year", "Position", "Date", "Number", "People", "Week", "Status", "Active",
+                 "_subtable_1015956"],
+        "sub_keep": {"_subtable_1015956": ["First, last names", "First&#44; last names", "Position", "At work", "Ready"]},
+    },
+    # Human Rotation (current year): the real state of each selected person – project, At work,
+    # arrival confirmation "Conf." and ready date. Name field id 1003165 is labelled "F".
+    "rotation": {
+        "optional": True,
+        "path": "planing/33",
+        "params": {"subtables": "0", "where": "1003228,eq,{year}"},
+        "keep": ["F", "Project", "Position", "At work", "Conf.", "Ready", "Active", "Year"],
     },
 }
 
@@ -69,9 +92,10 @@ def fetch_sheet(base, account, key, cfg):
     records, offset, limit = [], 0, 1000
     while True:
         params = [("api", ""), ("v", "3"), ("APIKey", key), ("limit", str(limit)), ("offset", str(offset))]
+        year = str(time.gmtime().tm_year)
         for k, v in cfg["params"].items():
             for item in (v if isinstance(v, list) else [v]):
-                params.append((k, item))
+                params.append((k, item.replace("{year}", year)))
         url = f"{base}/{account}/{cfg['path']}?" + urllib.parse.urlencode(params)
         for attempt in range(4):
             try:
@@ -107,7 +131,13 @@ def main():
     out_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "raw")
     out_dir.mkdir(parents=True, exist_ok=True)
     for name, cfg in SHEETS.items():
-        recs = fetch_sheet(base, account, key, cfg)
+        try:
+            recs = fetch_sheet(base, account, key, cfg)
+        except RuntimeError as exc:
+            if not cfg.get("optional"):
+                raise
+            print(f"WARNING: {name} skipped – {exc}", file=sys.stderr)
+            continue
         (out_dir / f"{name}.json").write_text(json.dumps(recs, ensure_ascii=False), encoding="utf-8")
         sample_keys = cfg["keep"] if cfg.get("compact") else (sorted(recs[0].keys()) if recs else [])
         print(f"{name}: {len(recs)} records; fields: {sample_keys}")

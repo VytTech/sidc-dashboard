@@ -21,6 +21,9 @@ from pathlib import Path
 HORIZON = 9  # current week + 8 weeks ahead
 STATUS_ORDER = ["Yes", "Workshop", "Scheduled", "Home"]
 INTERNAL = {"HOME", "Migration"}  # bookkeeping "projects", shown separately
+TECHNICAL = {"HOME", "Migration", "Multiple location", "N/A2", "CBC"}  # hidden from project/hours/worker lists
+INTERNAL_TIMESHEETS = {"Naujas cechas", "Kaminera", "Dubysa", "Laivytė"}  # own timesheet systems, not Ragic
+UNASSIGNED = "__unassigned__"    # active people at home without a project = unassigned (available) resources
 
 
 # ---------- helpers ----------
@@ -101,6 +104,46 @@ def _fernet():
     return Fernet(base64.urlsafe_b64encode(hashlib.sha256(secret.encode()).digest()))
 
 
+# ---------- management mode: labour cost only for holders of MGMT_PASSWORD ----------
+# Cost figures are moved out of the page data into an encrypted block. Stdlib only, mirrored in
+# template.html with WebCrypto: PBKDF2-SHA256 -> 64 bytes (32 encryption + 32 MAC key),
+# keystream = HMAC-SHA256(enc_key, nonce || counter), tag = HMAC-SHA256(mac_key, salt || nonce || ciphertext).
+COST_KEYS = {"cost", "cost30", "position_cost", "cost_total", "cost_last30", "cost_model"}
+MGMT_ITERATIONS = 200_000
+
+
+def split_costs(o):
+    """Return (data without cost keys, the cost keys in the same shape or None)."""
+    if isinstance(o, dict):
+        pub, sec = {}, {}
+        for k, v in o.items():
+            if k in COST_KEYS:
+                sec[k] = v
+                continue
+            pub[k], s = split_costs(v)
+            if s is not None:
+                sec[k] = s
+        return pub, (sec or None)
+    if isinstance(o, list):
+        parts = [split_costs(v) for v in o]
+        secs = [s for _, s in parts]
+        return [p for p, _ in parts], (secs if any(s is not None for s in secs) else None)
+    return o, None
+
+
+def encrypt_costs(obj, password):
+    salt, nonce = os.urandom(16), os.urandom(16)
+    key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, MGMT_ITERATIONS, dklen=64)
+    ek, mk = key[:32], key[32:]
+    plain = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    stream = b"".join(hmac.new(ek, nonce + i.to_bytes(4, "big"), hashlib.sha256).digest()
+                      for i in range((len(plain) + 31) // 32))
+    ct = bytes(a ^ b for a, b in zip(plain, stream))
+    tag = hmac.new(mk, salt + nonce + ct, hashlib.sha256).digest()
+    b64 = lambda b: base64.b64encode(b).decode("ascii")
+    return {"s": b64(salt), "n": b64(nonce), "c": b64(ct), "t": b64(tag), "i": MGMT_ITERATIONS}
+
+
 def load_history(hdir):
     f = _fernet()
     snaps = []
@@ -161,10 +204,38 @@ def working_days_between(after, until):
     return n
 
 
-def aggregate_workers(people, rows, today):
+def timesheet_index(rows, today, names):
+    """Who booked where: yards with Ragic timesheets (8 weeks), yards per person in the last completed week,
+    last booking date per person and yard (for manpower requests)."""
+    this_monday = today - dt.timedelta(days=today.weekday())
+    lw_start, lw_end = this_monday - dt.timedelta(days=7), this_monday - dt.timedelta(days=1)
+    recent_from = (this_monday - dt.timedelta(days=56)).isoformat()
+    yards_with_ts, last_week, emp_yard_last = set(), defaultdict(set), defaultdict(dict)
+    for row in rows:
+        day, hrs = ragic_date(row[4]), num(row[3])
+        if not day or not hrs or day > today.isoformat():
+            continue
+        proj = (row[0] or "").strip() or (row[1] or "").strip()
+        if not proj:
+            continue
+        yard = site_of(proj, names)
+        if day >= recent_from:
+            yards_with_ts.add(yard)
+        emp = ((row[5] if len(row) > 5 else "") or "").strip()
+        if not emp:
+            continue
+        if emp_yard_last[emp].get(yard, "") < day:
+            emp_yard_last[emp][yard] = day
+        if lw_start.isoformat() <= day <= lw_end.isoformat():
+            last_week[emp].add(yard)
+    return {"yards_with_ts": yards_with_ts, "last_week": last_week, "emp_yard_last": emp_yard_last,
+            "last_week_no": lw_start.isocalendar()[1]}
+
+
+def aggregate_workers(people, rows, today, ts=None, names=frozenset()):
     """Per-worker hours and flags. Names are used only to join rows to people and are not output."""
     yesterday = today - dt.timedelta(days=1)
-    d7, d28, d112 = (today - dt.timedelta(days=n) for n in (7, 28, 112))
+    d30, d28, d112 = (today - dt.timedelta(days=n) for n in (30, 28, 112))
     weeks4 = [(today - dt.timedelta(weeks=i)).isocalendar()[:2] for i in range(3, -1, -1)]
 
     daily = defaultdict(lambda: defaultdict(float))  # name -> date -> hours
@@ -180,7 +251,8 @@ def aggregate_workers(people, rows, today):
         if day > d112.isoformat():
             daily[name][day] += hrs
 
-    by_name = {person_name(p): p for p in people if person_name(p)}
+    by_name = {person_name(p): p for p in people if person_name(p)
+               and (p.get("Project") or "").strip() not in TECHNICAL}
     out = []
     for name in set(by_name) | {n for n, days in daily.items() if any(d > d28.isoformat() for d in days)}:
         p = by_name.get(name, {})
@@ -198,11 +270,11 @@ def aggregate_workers(people, rows, today):
             "code": worker_code(pos, p.get("_ragicId") or name),
             "rid": p.get("_ragicId"),
             "position": pos or "—",
-            "project": (p.get("Project") or "").strip() or "(unassigned)",
+            "project": (p.get("Project") or "").strip() or (UNASSIGNED if status == "Home" else "(unassigned)"),
             "status": status,
             "sub": (p.get("Subcontractor") or "") == "Yes",
             "weeks": [round(week_h.get(k, 0)) for k in weeks4],
-            "h7": round(sum(v for d, v in days.items() if d > d7)),
+            "h30": round(sum(v for d, v in days.items() if d > d30)),
             "h28": round(sum(recent.values())),
             "days28": len(recent),
             "max_day": round(max(recent.values()), 1) if recent else 0,
@@ -213,11 +285,19 @@ def aggregate_workers(people, rows, today):
             "last": last.isoformat() if last else "",
         }
         flags = []
-        if status == "Yes":
-            gap = working_days_between(last, yesterday) if last else None
-            w["missing"] = gap
-            if gap is None or gap >= MISSING_DAYS:
-                flags.append("missing")
+        project = (p.get("Project") or "").strip()
+        yard = site_of(project, names) if project else ""
+        if ts is not None and p:
+            # completed-week check: some supervisors fill the whole week on Saturday
+            checkable = (status == "Yes" and project and project not in INTERNAL_TIMESHEETS
+                         and yard in ts["yards_with_ts"])
+            if checkable and not ts["last_week"].get(name):
+                flags.append("no_ts")
+                w["no_ts_week"] = ts["last_week_no"]
+            other = sorted(y for y in ts["last_week"].get(name, ()) if project and y != yard)
+            if other:
+                flags.append("mismatch")
+                w["mismatch"] = other
         if w["days_over"]:
             flags.append("over12")
         if w["weeks_over"]:
@@ -228,14 +308,79 @@ def aggregate_workers(people, rows, today):
         out.append(w)
     out.sort(key=lambda w: (not w["flags"], w["project"], w["position"], w["code"]))
     return {"weeks": [f"W{wk}" for _, wk in weeks4], "workers": out,
+            "last_week": ts["last_week_no"] if ts else None,
             "flag_counts": dict(Counter(f for w in out for f in w["flags"]))}
 
 
-def aggregate_hours(rows, today, names):
+# ---------- labour cost ----------
+# Net ("in hand") hourly rate -> cost of the workplace = net + taxes.
+GPM, SODRA_EMPLOYEE, SODRA_EMPLOYER = 0.20, 0.195, 0.0177       # standard Lithuanian rates
+LT_FACTOR = 1 / (1 - GPM - SODRA_EMPLOYEE) * (1 + SODRA_EMPLOYER)  # ~1.68 € cost per 1 € net
+TRIP_SALARY_SHARE = 0.5   # ASSUMPTION: on business trips half of the net pay is salary, half tax-free per diem
+TRIP_FACTOR = TRIP_SALARY_SHARE * LT_FACTOR + (1 - TRIP_SALARY_SHARE)
+SUBCONTRACTOR_RATE = 35.0  # €/h, everything included (subcontractor invoice)
+COUNTRY_ALIAS = {"FIN": "FI"}
+
+
+class LabourCost:
+    def __init__(self, raw, projects):
+        self.rate = {}
+        by_pos = defaultdict(list)
+        for q in raw.get("qualification") or []:
+            r = num(q.get("Hour rate"))
+            if r > 0:
+                self.rate[(q.get("Emploee") or "").strip()] = r
+                by_pos[(q.get("Position") or "").strip()].append(r)
+        self.pos_avg = {k: sum(v) / len(v) for k, v in by_pos.items()}
+        allr = [r for v in by_pos.values() for r in v]
+        self.all_avg = sum(allr) / len(allr) if allr else 0.0
+        self.sub_company = {(c.get("Company") or "").strip(): (c.get("Subcontractor") or "") == "Yes"
+                            for c in raw.get("companies") or []}
+        self.sub_person = {person_name(p): (p.get("Subcontractor") or "") == "Yes" for p in raw.get("people") or []}
+        self.country = {p["name"]: p["country"] for p in projects if p["country"]}
+        self.names = set(self.country) | {p["name"] for p in projects}
+        self.stats = Counter()  # hours by rate source, for the data-quality note
+
+    def country_of(self, project):
+        if project in self.country:
+            return self.country[project]
+        site = site_of(project, self.names)
+        if site in self.country:
+            return self.country[site]
+        prefix = project.split("-")[0].upper()
+        if 2 <= len(prefix) <= 3 and prefix.isalpha() and "-" in project:
+            return COUNTRY_ALIAS.get(prefix, prefix)
+        return "LT"
+
+    def cost(self, project, position, hours, name, company):
+        company = (company or "").strip()
+        sub = self.sub_company.get(company) if company in self.sub_company else self.sub_person.get(name, False)
+        if sub:
+            self.stats["subcontractor"] += hours
+            return hours * SUBCONTRACTOR_RATE
+        rate = self.rate.get(name)
+        if rate:
+            self.stats["own_rate"] += hours
+        else:
+            rate = self.pos_avg.get(position) or self.all_avg
+            self.stats["position_avg"] += hours
+        trip = self.country_of(project) != "LT"
+        self.stats["trip" if trip else "lt"] += hours
+        return hours * rate * (TRIP_FACTOR if trip else LT_FACTOR)
+
+
+def aggregate_hours(rows, today, names, labour=None):
     """Sum 'Hours real' from Task list sub by site -> sub-project and by position (all time, up to today)."""
-    today_s, week_ago = today.isoformat(), (today - dt.timedelta(days=7)).isoformat()
+    today_s, month_ago = today.isoformat(), (today - dt.timedelta(days=30)).isoformat()
+
+    def months_from(first):   # every month from the yard's first booking through the current month
+        out, (y, m) = [], (int(first[:4]), int(first[5:7]))
+        while f"{y:04d}-{m:02d}" <= today_s[:7]:
+            out.append(f"{y:04d}-{m:02d}")
+            y, m = (y, m + 1) if m < 12 else (y + 1, 1)
+        return out
     groups = {}
-    total = last7 = 0.0
+    T = Counter()  # total / last30 hours and cost
     for row in rows:
         sub, proj_t, pos, h, day = row[:5]
         day = ragic_date(day)
@@ -243,33 +388,57 @@ def aggregate_hours(rows, today, names):
         if not day or day > today_s or not hrs:
             continue  # future-dated or empty task rows
         proj = (sub or "").strip() or (proj_t or "").strip() or "(no project)"
+        if proj in TECHNICAL or site_of(proj, names) in TECHNICAL:
+            continue
+        pos = (pos or "").strip() or "Other"
+        cost = labour.cost(proj, pos, hrs, (row[5] if len(row) > 5 else "") or "",
+                           row[6] if len(row) > 6 else "") if labour else 0.0
         site = site_of(proj, names)
-        recent = day > week_ago
-        g = groups.setdefault(site, {"name": site, "total": 0.0, "last7": 0.0, "first": day, "last": day,
-                                     "subs": defaultdict(lambda: [0.0, 0.0]), "positions": defaultdict(float)})
-        g["total"] += hrs
+        recent = day > month_ago
+        g = groups.setdefault(site, {"name": site, "first": day, "last": day, "t": Counter(),
+                                     "subs": defaultdict(Counter), "positions": defaultdict(Counter),
+                                     "months": defaultdict(lambda: {"subs": defaultdict(Counter),
+                                                                    "positions": defaultdict(Counter)})})
+        mm = g["months"][day[:7]]
+        for c in (mm["subs"][proj], mm["positions"][pos]):
+            c["h"] += hrs
+            c["cost"] += cost
         g["first"], g["last"] = min(g["first"], day), max(g["last"], day)
-        g["subs"][proj][0] += hrs
-        g["positions"][(pos or "").strip() or "Other"] += hrs
-        total += hrs
-        if recent:
-            g["last7"] += hrs
-            g["subs"][proj][1] += hrs
-            last7 += hrs
+        for c in (g["t"], g["subs"][proj], T):
+            c["total"] += hrs
+            c["cost"] += cost
+            if recent:
+                c["last30"] += hrs
+                c["cost30"] += cost
+        g["positions"][pos]["h"] += hrs
+        g["positions"][pos]["cost"] += cost
+    figs = lambda c: {"total": round(c["total"]), "last30": round(c["last30"]),
+                      "cost": round(c["cost"]), "cost30": round(c["cost30"])}
+
+    def month_figs(m, mm):
+        if not mm:
+            return {"m": m, "total": 0, "cost": 0, "subs": [], "positions": {}, "position_cost": {}}
+        subs = sorted(mm["subs"].items(), key=lambda kv: -kv[1]["h"])
+        pos = sorted(mm["positions"].items(), key=lambda kv: -kv[1]["h"])
+        return {"m": m, "total": round(sum(v["h"] for _, v in subs)), "cost": round(sum(v["cost"] for _, v in subs)),
+                "subs": [{"name": k, "total": round(v["h"]), "cost": round(v["cost"])} for k, v in subs],
+                "positions": {k: round(v["h"]) for k, v in pos},
+                "position_cost": {k: round(v["cost"]) for k, v in pos}}
+
     out = []
-    for g in sorted(groups.values(), key=lambda g: -g["total"]):
-        out.append({"name": g["name"], "total": round(g["total"]), "last7": round(g["last7"]),
-                    "first": g["first"], "last": g["last"],
-                    "subs": [{"name": k, "total": round(v[0]), "last7": round(v[1])}
-                             for k, v in sorted(g["subs"].items(), key=lambda kv: -kv[1][0])],
-                    "positions": {k: round(v) for k, v in sorted(g["positions"].items(), key=lambda kv: -kv[1])}})
+    for g in sorted(groups.values(), key=lambda g: -g["t"]["total"]):
+        out.append({"name": g["name"], **figs(g["t"]), "first": g["first"], "last": g["last"],
+                    "subs": [{"name": k, **figs(v)} for k, v in sorted(g["subs"].items(), key=lambda kv: -kv[1]["total"])],
+                    "positions": {k: round(v["h"]) for k, v in sorted(g["positions"].items(), key=lambda kv: -kv[1]["h"])},
+                    "position_cost": {k: round(v["cost"]) for k, v in g["positions"].items()},
+                    "months": [month_figs(m, g["months"].get(m)) for m in months_from(g["first"])]})
     by_name = {}
     for g in out:
-        by_name[g["name"]] = {"total": g["total"], "last7": g["last7"]}
+        by_name[g["name"]] = {k: g[k] for k in ("total", "last30", "cost", "cost30")}
         for s in g["subs"]:
             if s["name"] != g["name"]:
-                by_name.setdefault(s["name"], {"total": s["total"], "last7": s["last7"]})
-    return {"groups": out, "by_name": by_name, "total": round(total), "last7": round(last7)}
+                by_name.setdefault(s["name"], {k: s[k] for k in ("total", "last30", "cost", "cost30")})
+    return {"groups": out, "by_name": by_name, **figs(T)}
 
 
 def build_snapshot(raw, today):
@@ -288,7 +457,7 @@ def build_snapshot(raw, today):
         if st == "Terminate":
             continue
         st = st if st in STATUS_ORDER else "Other"
-        proj = (p.get("Project") or "").strip() or "(unassigned)"
+        proj = (p.get("Project") or "").strip() or (UNASSIGNED if st == "Home" else "(unassigned)")
         pos = (p.get("Position") or "").strip() or "Other"
         by_project[proj][st] += 1
         by_position[pos][st] += 1
@@ -305,7 +474,7 @@ def build_snapshot(raw, today):
     seen = set()
     for r in raw["projects"]:
         name = (r.get("Project") or "").strip()
-        if not name or (r.get("Active") or "Yes") != "Yes":
+        if not name or (r.get("Active") or "Yes") != "Yes" or name in TECHNICAL:
             continue
         seen.add(name)
         staffing = None
@@ -342,33 +511,93 @@ def build_snapshot(raw, today):
         })
     # people assigned to projects that are not in the active project list
     for name, st in by_project.items():
-        if name not in seen:
+        if name not in seen and name not in TECHNICAL:
             projects.append({"name": name, "country": "", "start": "", "end": "", "used_hours": 0,
                              "internal": True, "status": dict(st), "onsite": st.get("Yes", 0),
                              "active": sum(st.values()), "positions_onsite": dict(pos_onsite.get(name, Counter())),
-                             "staffing": None, "not_in_project_list": True})
+                             "staffing": None, "not_in_project_list": True, "unassigned": name == UNASSIGNED})
     projects.sort(key=lambda p: (p["internal"], -p["onsite"], -p["active"], p["name"]))
 
-    # Additional manpower requests (current year, last 4 weeks and ahead)
-    requests = []
-    for r in raw["requests"]:
-        y, w = int(num(r.get("Year"))), int(num(r.get("Week")))
-        if y != year or w < week - 4:
-            continue
-        req_n, filled = int(num(r.get("Number"))), max(0, int(num(r.get("People"))))
-        requests.append({"project": (r.get("Project") or "").strip(), "position": (r.get("Position") or "").strip(),
-                         "week": w, "date": ragic_date(r.get("Date")), "requested": req_n, "filled": filled,
-                         "gap": max(0, req_n - filled)})
-    requests.sort(key=lambda r: (r["week"], r["project"]))
-
-    hours = aggregate_hours(raw.get("hours") or [], today, {p["name"] for p in projects})
-    workers = aggregate_workers(people, raw.get("hours") or [], today)
+    labour = LabourCost(raw, projects)
     names = {p["name"] for p in projects}
+    rows = raw.get("hours") or []
+    ts = timesheet_index(rows, today, names)
+    hours = aggregate_hours(rows, today, names, labour)
+    workers = aggregate_workers(people, rows, today, ts, names)
     for w in workers["workers"]:
         w["group"] = site_of(w["project"], names)  # same yard grouping as the hours table
     for p in projects:
         g = hours["by_name"].get(p["name"])
-        p["hours"] = g  # {"total", "last7"} for a site (incl. its sub-projects) or a single project
+        p["hours"] = g  # {"total", "last30"} for a site (incl. its sub-projects) or a single project
+        # people on site, but this location keeps its timesheets outside Ragic
+        p["no_ragic_ts"] = bool(p["onsite"] and not p["internal"] and p["name"] not in INTERNAL_TIMESHEETS
+                                and site_of(p["name"], names) not in ts["yards_with_ts"])
+
+    # Additional manpower requests (current year, last 4 weeks and ahead).
+    # The request is only the "letter" to Human Rotation; rotation can be changed by hand afterwards
+    # (people replaced, moved to another project, sent home). So every selected person is checked
+    # against their current Human Rotation row (planing/33): project, At work, Conf., Ready.
+    # Note: Conf. is reset to "No" once the person arrives (At work = Yes).
+    rot = {}
+    for r in raw.get("rotation") or []:
+        n = (r.get("F") or "").strip()
+        if n and (n not in rot or r.get("Active") == "Yes"):
+            rot[n] = r
+    have_rot = bool(rot)
+    ragic = f"{os.environ.get('RAGIC_BASE', 'https://eu4.ragic.com').rstrip('/')}/{os.environ.get('RAGIC_ACCOUNT', 'SIDC10000')}"
+    requests = []
+    for r in raw["requests"]:
+        y, w = int(num(r.get("Year"))), int(num(r.get("Week")))
+        proj = (r.get("Project") or "").strip()
+        if y != year or w < week - 4 or proj in TECHNICAL or (r.get("Active") or "Yes") == "No":
+            continue
+        yard, date = site_of(proj, names), ragic_date(r.get("Date"))
+        people_sel = []
+        for row in (r.get("_subtable_1015956") or {}).values():
+            n = (row.get("First, last names") or row.get("First&#44; last names") or "").strip()
+            if not n:
+                continue
+            q = rot.get(n)
+            pos = (row.get("Position") or "").strip()
+            if not have_rot:
+                state, where, ready = "planned", "", ragic_date(row.get("Ready"))
+            elif not q:
+                state, where, ready = "not_in_rotation", "", ""
+            else:
+                rp, at = (q.get("Project") or "").strip(), (q.get("At work") or "").strip()
+                where, ready, pos = rp, ragic_date(q.get("Ready")), (q.get("Position") or pos).strip()
+                if q.get("Active") == "No" or not rp:
+                    state = "unassigned"
+                elif site_of(rp, names) != yard:
+                    state = "elsewhere"
+                elif at == "Yes":
+                    state = "working"
+                elif (q.get("Conf.") or "").strip() == "Yes":
+                    state = "confirmed"
+                else:
+                    state = "planned"
+            people_sel.append({"name": n, "position": pos, "state": state,
+                               "where": where if state == "elsewhere" else "", "ready": ready})
+        cnt = Counter(s["state"] for s in people_sel)
+        requested = int(num(r.get("Number")))
+        working, confirmed = cnt["working"], cnt["confirmed"]
+        reserved = working + confirmed + cnt["planned"]
+        changed = len(people_sel) - reserved
+        if reserved < requested:
+            status = "open"
+        elif working >= requested:
+            status = "completed"
+        elif working + confirmed >= requested:
+            status = "confirmed"
+        else:
+            status = "unconfirmed"
+        rid = r.get("_ragicId")
+        requests.append({"id": rid, "url": f"{ragic}/planing/52/{rid}" if rid else "", "project": proj, "yard": yard,
+                         "position": (r.get("Position") or "").strip(), "week": w, "date": date,
+                         "requested": requested, "selected": len(people_sel), "reserved": reserved,
+                         "confirmed": confirmed, "working": working, "changed": changed,
+                         "gap": max(0, requested - reserved), "status": status, "people": people_sel})
+    requests.sort(key=lambda r: (r["week"], r["project"]))
 
     # company-wide staffing balance per position (current week)
     pos_balance = Counter()
@@ -382,13 +611,20 @@ def build_snapshot(raw, today):
         "year": year, "week": week, "weeks": weeks,
         "week_starts": [dt.date.fromisocalendar(year, w, 1).isoformat() for w in weeks],
         "projects": projects,
+        "unassigned_key": UNASSIGNED,
         "workforce": {"total": sum(status_total.values()), "status": dict(status_total), "own": own, "sub": sub,
+                      "unassigned": sum(by_project.get(UNASSIGNED, Counter()).values()),
                       "by_position": {k: dict(v) for k, v in sorted(by_position.items(), key=lambda kv: -sum(kv[1].values()))}},
         "position_balance_now": dict(sorted(pos_balance.items(), key=lambda kv: kv[1])),
         "requests": requests,
         "hours": hours["groups"],
         "hours_total": hours["total"],
-        "hours_last7": hours["last7"],
+        "hours_last30": hours["last30"],
+        "cost_total": hours["cost"],
+        "cost_last30": hours["cost30"],
+        "cost_model": {"lt_factor": round(LT_FACTOR, 2), "trip_factor": round(TRIP_FACTOR, 2),
+                       "trip_salary_share": TRIP_SALARY_SHARE, "sub_rate": SUBCONTRACTOR_RATE,
+                       "hours_by_source": {k: round(v) for k, v in labour.stats.items()}},
         "workers": workers,
         "ragic_people_url": f"{os.environ.get('RAGIC_BASE', 'https://eu4.ragic.com').rstrip('/')}/"
                             f"{os.environ.get('RAGIC_ACCOUNT', 'SIDC10000')}/planing/19/",
@@ -412,6 +648,8 @@ def diff(prev, cur):
     d = cw["total"] - pw["total"]
     if d:
         add("people", f"Active workforce: {pw['total']} → {cw['total']}", d)
+    if "unassigned" in pw and cw.get("unassigned") != pw.get("unassigned"):
+        add("people", f"Unassigned resources: {pw['unassigned']} → {cw['unassigned']}", cw["unassigned"] - pw["unassigned"])
 
     pp = {p["name"]: p for p in prev["projects"]}
     cp = {p["name"]: p for p in cur["projects"]}
@@ -443,11 +681,12 @@ def diff(prev, cur):
         old = prev_req.get(key(r))
         if not old:
             add("request", f"New manpower request: {r['project']} – {r['requested']}× {r['position']} (W{r['week']})", r["requested"])
-        elif old["filled"] != r["filled"]:
-            add("request", f"Request filled {old['filled']} → {r['filled']} of {r['requested']}: {r['project']} {r['position']} (W{r['week']})",
-                r["filled"] - old["filled"])
+        elif "reserved" in old and old["reserved"] != r["reserved"]:
+            add("request", f"Reserved {old['reserved']} → {r['reserved']} of {r['requested']}: {r['project']} {r['position']} (W{r['week']})",
+                r["reserved"] - old["reserved"])
 
-    labels = {"missing": "Workers on site without booked hours", "over12": "Workers with days over 12 h",
+    labels = {"no_ts": "Workers without timesheet entries last week", "mismatch": "Workers booking hours at another location",
+              "over12": "Workers with days over 12 h",
               "over60": "Workers with weeks over 60 h", "avg48": "Workers averaging over 48 h/week"}
     pf = (prev.get("workers") or {}).get("flag_counts")
     if pf is not None:
@@ -461,25 +700,36 @@ def diff(prev, cur):
 def trend(history, cur):
     series = {}
     for s in history + [cur]:
-        series[s["date"]] = {"onsite": s["workforce"]["status"].get("Yes", 0), "active": s["workforce"]["total"],
-                             "projects": {p["name"]: p["onsite"] for p in s["projects"]}}
-    return [{"date": d, **v} for d, v in sorted(series.items())][-120:]
+        st, wf = s["workforce"]["status"], s["workforce"]
+        series[s["date"]] = {
+            "onsite": st.get("Yes", 0), "workshop": st.get("Workshop", 0), "scheduled": st.get("Scheduled", 0),
+            "home": st.get("Home", 0), "active": wf["total"], "unassigned": wf.get("unassigned"),
+            "below_plan": -sum(p["staffing"]["short"][0] for p in s["projects"]
+                               if p.get("staffing") and not p.get("internal")),
+            "still_needed": sum(r.get("gap", 0) for r in s.get("requests", []) if r.get("week", 0) >= s["week"]),
+            "projects": {p["name"]: p["onsite"] for p in s["projects"]}}
+    return [{"date": d, **v} for d, v in sorted(series.items())][-190:]
 
 
 def main():
     raw_dir, hist_dir, out_html = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
     raw = {n: json.loads((raw_dir / f"{n}.json").read_text(encoding="utf-8"))
-           for n in ("projects", "people", "requests", "hours") if (raw_dir / f"{n}.json").exists()}
+           for n in ("projects", "people", "requests", "hours", "qualification", "companies", "rotation")
+           if (raw_dir / f"{n}.json").exists()}
     today = dt.date.fromisoformat(os.environ["BUILD_DATE"]) if os.environ.get("BUILD_DATE") else dt.date.today()
     snap = build_snapshot(raw, today)
     history = [h for h in load_history(hist_dir) if h["date"] < snap["date"]]
     prev = history[-1] if history else None
     # per-worker rows are only needed for today's page; history keeps the flag counts
-    save_snapshot(hist_dir, dict(snap, workers={"flag_counts": snap["workers"]["flag_counts"]}))
+    save_snapshot(hist_dir, dict(snap, workers={"flag_counts": snap["workers"]["flag_counts"]},
+                                 requests=[{k: v for k, v in r.items() if k != "people"} for r in snap["requests"]]))
 
     page = dict(snap)
     page["changes"] = diff(prev, snap)
     page["trend"] = trend(history, snap)
+    if os.environ.get("MGMT_PASSWORD"):
+        page, costs = split_costs(page)
+        page["costs_enc"] = encrypt_costs(costs, os.environ["MGMT_PASSWORD"])
     template = (Path(__file__).parent / "template.html").read_text(encoding="utf-8")
     payload = json.dumps(page, ensure_ascii=False).replace("</", "<\\/")
     out_html.parent.mkdir(parents=True, exist_ok=True)

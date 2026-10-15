@@ -11,7 +11,8 @@
   --accent:#1f5fbf; --onsite:#2563c9; --workshop:#0e9384; --scheduled:#d48a0b; --home:#9aa3af; --other:#cbd2da;
   --neg:#c62f2f; --neg-bg:#fbe5e3; --neg-bg2:#f4bdb8; --pos:#16794a; --pos-bg:#e1f3e8; --zero-bg:#f0f2f5;
   --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.06);
-  --sel:#dfe9fb; --sel-detail:#f2f6fd;
+  --sel:#dfe9fb; --sel-detail:#f2f6fd; --pos-bg2:#b6e0c5;
+  --w-onsite:#6f94d2; --w-workshop:#9cc5bd; --w-scheduled:#e2c88f; --w-home:#c4c9d1; --w-other:#e2e5ea;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -19,7 +20,8 @@
     --accent:#7aaaff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#7a8492; --other:#454d58;
     --neg:#ff8178; --neg-bg:#45222a; --neg-bg2:#6b2a2e; --pos:#55cc92; --pos-bg:#1b3a2c; --zero-bg:#2a313c;
     --shadow:0 0 0 1px rgba(255,255,255,.03),0 4px 14px rgba(0,0,0,.45);
-    --sel:#2b3d5e; --sel-detail:#232d3d;
+    --sel:#2b3d5e; --sel-detail:#232d3d; --pos-bg2:#285640;
+    --w-onsite:#5378b8; --w-workshop:#4d7f78; --w-scheduled:#8f7a4e; --w-home:#4f5662; --w-other:#383f49;
   }
 }
 :root[data-theme="dark"]{
@@ -27,13 +29,19 @@
   --accent:#7aaaff; --onsite:#5b93f0; --workshop:#2bb5a3; --scheduled:#e9a93a; --home:#7a8492; --other:#454d58;
   --neg:#ff8178; --neg-bg:#45222a; --neg-bg2:#6b2a2e; --pos:#55cc92; --pos-bg:#1b3a2c; --zero-bg:#2a313c;
   --shadow:0 0 0 1px rgba(255,255,255,.03),0 4px 14px rgba(0,0,0,.45);
-  --sel:#2b3d5e; --sel-detail:#232d3d;
+  --sel:#2b3d5e; --sel-detail:#232d3d; --pos-bg2:#285640;
+  --w-onsite:#5378b8; --w-workshop:#4d7f78; --w-scheduled:#8f7a4e; --w-home:#4f5662; --w-other:#383f49;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);
   font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}
 .wrap{max-width:1240px;margin:0 auto;padding:24px 16px 48px}
 header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{height:62px;width:auto;display:block}
+.logo.d{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .logo.l{display:none} :root:not([data-theme="light"]) .logo.d{display:block}}
+:root[data-theme="dark"] .logo.l{display:none} :root[data-theme="dark"] .logo.d{display:block}
 h1{font-size:22px;margin:0;letter-spacing:-.01em}
 .sub{color:var(--muted);margin-top:2px}
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:12px;font-weight:600}
@@ -57,8 +65,25 @@ section{margin-top:22px}
 .chg{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums}
 .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:0 16px}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
-th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-th{font-size:12px;color:var(--muted);font-weight:600;background:var(--card);position:sticky;top:0}
+th,td{padding:8px 8px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600;background:var(--card);position:sticky;top:0;white-space:normal;vertical-align:bottom}
+td.wrapcell{white-space:normal;min-width:120px}
+/* no horizontal scrolling: less important columns step out on narrower screens */
+@media (max-width:1100px){#hours tr:not(.detail)>:nth-child(7){display:none}}
+@media (max-width:1000px){
+  #projects tr:not(.detail)>:is(:nth-child(5),:nth-child(6),:nth-child(9)),
+  #hours tr:not(.detail)>:nth-child(6),
+  #requests tr:not(.detail)>:is(:nth-child(6),:nth-child(7)){display:none}}
+@media (max-width:760px){
+  #projects tr:not(.detail)>:is(:nth-child(2),:nth-child(4),:nth-child(7),:nth-child(11)),
+  #hours tr:not(.detail)>:is(:nth-child(3),:nth-child(5)),
+  #requests tr:not(.detail)>:is(:nth-child(5),:nth-child(10)){display:none}}
+@media (max-width:480px){#requests tr:not(.detail)>:nth-child(3),.plan .w2{display:none}
+  #projects td,#requests td,#hours td{white-space:normal}
+  th,td{padding:7px 5px}}
+html.nocost .cst{display:none !important}
+html.nocost .bars .row.cost{grid-template-columns:130px 1fr 64px}
+.cty{color:var(--faint);font-weight:400;font-size:12px;margin-left:6px}
 td.num,th.num{text-align:right}
 tbody tr.proj{cursor:pointer}
 tbody tr.proj:hover td{background:var(--soft)}
@@ -80,6 +105,14 @@ tbody tr.proj.open td:first-child::before{transform:rotate(90deg);color:var(--ac
 .bars .track{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--soft)}
 .bars .track span{display:block;height:100%}
 .bars .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.periods{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 10px}
+.pbtn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:7px;padding:4px 9px;font:inherit;font-size:12.5px;cursor:pointer;font-variant-numeric:tabular-nums}
+.pbtn:hover:not(:disabled){border-color:var(--accent)}
+.pbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--card);font-weight:650}
+.pbtn:disabled{opacity:.4;cursor:default}
+.period-sum{margin:0 0 10px;font-size:13.5px}
+.bars .row.cost{grid-template-columns:130px 1fr 64px 56px}
+@media (max-width:520px){.bars .row.cost{grid-template-columns:96px 1fr 56px 50px}}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-bottom:8px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .div{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;margin:5px 0}
@@ -92,6 +125,16 @@ svg text{fill:var(--muted);font-size:11px}
 .detailgrid{display:grid;grid-template-columns:minmax(200px,280px) 1fr;gap:20px;padding:6px 0}
 @media (max-width:700px){.detailgrid{grid-template-columns:1fr}}
 .detail table td,.detail table th{padding:5px 6px;background:transparent}
+.onsite-list{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px;align-items:center}
+.onsite-list span{background:var(--soft);border-radius:6px;padding:2px 8px;font-size:12.5px}
+.onsite-list span b{margin-left:4px}
+.plan td.num{padding:5px 3px}
+.plan .q{color:var(--muted);display:inline-block;min-width:16px;text-align:right}
+.plan .bal{min-width:30px;padding:1px 3px;margin-left:3px}
+@media (max-width:1000px){.plan .w5,.plan .w6,.plan .w7,.plan .w8{display:none}}
+@media (max-width:640px){.plan .w3,.plan .w4{display:none}
+  #heat tr>:nth-child(n+6){display:none}
+  table.sub td,table.sub th{white-space:normal}}
 .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
@@ -113,14 +156,20 @@ td.hot{color:var(--neg);font-weight:700}
 .modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
 .modal .tablewrap{max-height:62vh;overflow:auto}
 @media (max-width:520px){.modal{padding:8px}.modal-box{padding:14px 12px}}
+.modal.anchored{display:block;padding:0;background:rgba(5,8,12,.28)}
+.modal.anchored .modal-box{position:fixed;width:min(720px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.45),0 0 0 1px var(--accent)}
+.plan-note{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--accent);background:var(--sel-detail);border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:13.5px}
+.plan-note .i{font-size:18px;line-height:1.2}
+.plan-note b{color:var(--accent)}
 /* ---------- Visual skin ---------- */
 .v-sec{margin-top:18px}
 .v-title{font-size:19px;font-weight:700;margin:0 0 2px;letter-spacing:-.01em}
 .v-sub{color:var(--muted);margin:0 0 14px;font-size:13.5px}
 .v-hero{font-size:22px;line-height:1.35;margin:0 0 14px}
 .v-hero b{font-size:34px;letter-spacing:-.02em}
-.waffle{display:flex;flex-wrap:wrap;gap:2px;margin:6px 0 14px}
-.waffle i{width:11px;height:11px;border-radius:2px;display:block}
+.waffle{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 16px}
+.waffle i{width:24px;height:24px;border-radius:5px;display:block}
+@media (max-width:520px){.waffle{gap:4px}.waffle i{width:18px;height:18px;border-radius:4px}}
 .v-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .v-legend > div{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:10px;padding:10px 12px}
 .v-legend > div, .v-legend > div > div, .grid > *, .v-cards > *{min-width:0}
@@ -137,6 +186,9 @@ td.hot{color:var(--neg);font-weight:700}
 .v-card.dim{opacity:.6}
 .pill{display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:3px 10px;font-weight:650;font-size:13px;width:fit-content}
 .pill.bad{background:var(--neg-bg);color:var(--neg)}
+button.pill{border:1px solid transparent;font-family:inherit;cursor:pointer}
+button.pill.bad:hover{border-color:var(--neg)}
+button.pill.bad::after{content:"›";font-size:16px;line-height:1;margin-left:2px}
 .pill.good{background:var(--pos-bg);color:var(--pos)}
 .pill.none{background:var(--soft);color:var(--muted)}
 .meter{height:10px;border-radius:5px;background:var(--soft);overflow:hidden;display:flex;gap:2px}
@@ -148,9 +200,31 @@ td.hot{color:var(--neg);font-weight:700}
 .v-dots .wk{display:flex;gap:6px}
 .v-dots .wk span{width:38px;text-align:center;font-size:11px;color:var(--muted);line-height:1.2}
 .dot{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:750;font-size:13px;flex:none}
-.dot.bad{background:var(--neg);color:var(--card)}
-.dot.bad2{background:var(--neg-bg2);color:var(--neg)}
+/* same palette as the classic "Staffing outlook" heatmap */
+.dot.bad{background:var(--neg-bg2);color:var(--neg)}
+.dot.bad2{background:var(--neg-bg);color:var(--neg)}
 .dot.good{background:var(--pos-bg);color:var(--pos)}
+.v-dots .pname{font-weight:650;cursor:pointer}
+.v-dots .pname:hover{color:var(--accent)}
+.v-dots .wk.click{cursor:pointer}
+.modal-box.compact{max-width:720px;padding:12px 14px}
+.modal-box.compact .tablewrap{margin:0;padding:0}
+.modal-box.compact h2{font-size:15px}
+.modal-box.compact .hint{font-size:12px;margin-bottom:8px}
+.pos-table th,.pos-table td{padding:3px 4px;font-size:12.5px}
+.pos-table th.num{text-align:center;font-size:11.5px}
+.pos-table td.c{text-align:center;padding:3px 3px;min-width:42px}
+.pos-table .cell{display:inline-block;min-width:32px;border-radius:5px;padding:0 5px;font-weight:600;font-size:12px}
+.pos-table th.cur{border-radius:6px 6px 0 0}
+.pos-table tr:last-child td.cur{border-radius:0 0 6px 6px}
+.pos-table .n1{background:var(--neg-bg);color:var(--neg)} .pos-table .n2{background:var(--neg-bg2);color:var(--neg)}
+.pos-table .p1{background:var(--pos-bg);color:var(--pos)} .pos-table .z{background:var(--zero-bg);color:var(--faint)}
+.pos-table .req{display:block;font-size:10px;line-height:1.2;margin-top:2px;color:var(--faint)}
+.v-missing{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 12px}
+.v-missing span{background:var(--neg-bg);color:var(--neg);border-radius:6px;padding:2px 7px;font-weight:650;font-size:12px}
+.pos-table th.cur{color:var(--accent);background:var(--sel);border-radius:8px 8px 0 0}
+.pos-table td.cur{background:var(--sel)}
+.pos-table tr:last-child td.cur{border-radius:0 0 8px 8px}
 .v-hbar{display:grid;grid-template-columns:120px 1fr 70px;gap:8px 10px;align-items:center}
 .v-hbar .bar{height:22px;background:var(--onsite);border-radius:0 4px 4px 0;min-width:3px}
 .v-hbar .val{font-weight:650;font-variant-numeric:tabular-nums}
@@ -164,6 +238,36 @@ td.hot{color:var(--neg);font-weight:700}
 .v-req .meter, .v-legend .meter{background:var(--card)}
 .v-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 @media (max-width:520px){.v-hero b{font-size:28px}.v-dots{grid-template-columns:80px 1fr}.v-hbar{grid-template-columns:90px 1fr 56px}}
+.stale{border:1px solid var(--scheduled);background:color-mix(in srgb,var(--scheduled) 14%,var(--card));border-radius:10px;padding:10px 14px;margin:0 0 14px}
+.attn{margin:0 0 14px;border-color:var(--neg)}
+.attn h2{display:flex;align-items:center;gap:8px}
+.attn ul{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));gap:8px}
+.attn li{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:8px;padding:8px 10px;cursor:pointer;border:1px solid transparent}
+.attn li:hover{border-color:var(--accent)}
+.attn li .ico{font-size:17px;line-height:1.3}
+.attn li .t{font-weight:650}
+.attn li .w{font-size:12.5px;color:var(--muted)}
+.attn li.hi{border-left:4px solid var(--neg)}
+.pdfbtn{margin-left:auto;float:right;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:6px;padding:1px 7px;font:inherit;font-size:11.5px;font-weight:600;cursor:pointer}
+.pdfbtn:hover{color:var(--accent);border-color:var(--accent)}
+#printArea{display:none}
+@media print{
+  :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+    --bg:#fff; --card:#fff; --ink:#15181d; --muted:#5d6673; --faint:#8a929e; --line:#d9dde3; --soft:#f0f2f5;
+    --accent:#1f5fbf; --onsite:#2563c9; --workshop:#0e9384; --scheduled:#d48a0b; --home:#9aa3af; --other:#cbd2da;
+    --neg:#c62f2f; --neg-bg:#fbe5e3; --neg-bg2:#f4bdb8; --pos:#16794a; --pos-bg:#e1f3e8; --zero-bg:#f0f2f5;
+    --sel:#dfe9fb; --sel-detail:#f2f6fd; --pos-bg2:#b6e0c5; --shadow:none;
+    --w-onsite:#6f94d2; --w-workshop:#9cc5bd; --w-scheduled:#e2c88f; --w-home:#c4c9d1; --w-other:#e2e5ea}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.print-one > *:not(#printArea){display:none !important}
+  body.print-one #printArea{display:block}
+  #printArea .pdfbtn,#printArea .wkbtn{display:none}
+  #printArea .tablewrap{overflow:visible;margin:0;padding:0}
+  #printArea .card{border:0;box-shadow:none;padding:0}
+  #printArea .ph{display:flex;align-items:center;gap:12px;border-bottom:2px solid #1f5fbf;padding-bottom:8px;margin-bottom:14px}
+  #printArea .ph img{height:44px}
+  #printArea tr{break-inside:avoid}
+}
 footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
 .toggle{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer}
 @media (max-width:520px){.kpi .value{font-size:24px}.bars .row{grid-template-columns:96px 1fr 36px}.div{grid-template-columns:96px 1fr}}
@@ -172,16 +276,24 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
 <body>
 <div class="wrap">
   <header>
-    <div>
-      <h1>SIDC Projects · Daily Overview</h1>
-      <div class="sub" id="sub"></div>
+    <div class="brand">
+      <img class="logo l" alt="PASSER SIDC" src="data:image/png;base64,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">
+      <img class="logo d" alt="PASSER SIDC" src="data:image/png;base64,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">
+      <div>
+        <h1>Daily Overview</h1>
+        <div class="sub" id="sub"></div>
+      </div>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="toggle" id="mgmt" hidden>🔒 Management</button>
       <button class="toggle" id="skin" aria-pressed="false">Skin: Classic</button>
       <button class="toggle" id="theme">Theme</button>
+      <button class="toggle" id="lang" title="Kalba / language">LT</button>
     </div>
   </header>
 
+  <div class="stale" id="stale" hidden></div>
+  <div class="card attn" id="attn" hidden></div>
   <div id="visual" hidden></div>
   <div id="classic">
   <div class="grid kpis" id="kpis"></div>
@@ -193,15 +305,17 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
       <ul class="changes" id="changes"></ul>
     </div>
     <div class="card">
-      <h2>People on site – trend</h2>
-      <p class="hint">Daily headcount with status “at work”. History builds up with every daily update.</p>
+      <h2>Trend</h2>
+      <p class="hint">One point per daily update. Switch lines on and off and choose the period; history builds up with every update.</p>
+      <div class="periods" id="trendRange"></div>
+      <div class="chips" id="trendLines" style="margin-bottom:8px"></div>
       <div id="trend"></div>
     </div>
   </section>
 
   <section class="card">
     <h2>Projects</h2>
-    <p class="hint">All active projects. Click a row for the position breakdown and the 8-week staffing plan. Short / spare = planned minus required people this week (red = people missing in at least one position).</p>
+    <p class="hint">All active projects. Click a row for the position breakdown and the 8-week staffing plan. Short / spare = people booked minus the <b>project manager’s staffing plan</b> this week (red = fewer than planned in at least one job). This is not a request for new people – see “Additional manpower requests”.</p>
     <div class="tablewrap"><table id="projects"></table></div>
   </section>
 
@@ -213,7 +327,7 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
 
   <section class="card">
     <h2>Staffing outlook</h2>
-    <p class="hint">Red = people missing (sum of shortages over all positions), green = every position filled (number = spare people). Hover a cell for the positions. Only projects with a staffing plan in Ragic are shown.</p>
+    <p class="hint">Compared with the <b>project manager’s staffing plan</b> in Ragic, not with requests for new people. Red = fewer people than planned (sum over all jobs), green = every job staffed as planned (number = more than planned). Hover a cell for the positions. Only projects with a staffing plan in Ragic are shown.</p>
     <div class="tablewrap"><table class="heat" id="heat"></table></div>
   </section>
 
@@ -233,12 +347,29 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
 
   <section class="card">
     <h2>Additional manpower requests</h2>
-    <p class="hint">Requests from the last 4 weeks and upcoming weeks.</p>
+    <p class="hint">Requests from the last 4 weeks and upcoming weeks. The request is only the instruction – every selected person is checked in <b>Human Rotation</b>, because rotation can be changed by hand. <b>Reserved</b> = selected and still planned for this project in rotation · <b>Confirmed</b> = arrival confirmed · <b>Working</b> = already on site · <b>Still needed</b> = requested minus reserved · <b>not in rotation</b> = selected people that Human Rotation does not (yet) have on this project – other project, no project or missing. Click a row to see who.</p>
     <div class="tablewrap"><table id="requests"></table></div>
   </section>
 
   </div>
   <footer id="foot"></footer>
+</div>
+<div id="printArea"></div>
+
+<div class="modal" id="mgmtModal" hidden role="dialog" aria-modal="true" aria-labelledby="mgmtTitle">
+  <form class="modal-box compact" id="mgmtForm" style="max-width:380px;margin-top:12vh">
+    <div class="modal-head">
+      <h2 id="mgmtTitle">Management mode</h2>
+      <button type="button" class="toggle" id="mgmtClose" aria-label="Close">✕</button>
+    </div>
+    <p class="hint">Labour cost figures are only shown with the management password. They stay visible in this browser tab until you close it or press “Lock”.</p>
+    <input type="password" id="mgmtPw" autocomplete="current-password" placeholder="Management password" aria-label="Management password"
+      style="width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 10px;font:inherit">
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+      <button type="submit" class="wkbtn" id="mgmtGo">Unlock</button>
+      <span class="muted" id="mgmtMsg" style="font-size:12.5px"></span>
+    </div>
+  </form>
 </div>
 
 <div class="modal" id="wkModal" hidden role="dialog" aria-modal="true" aria-labelledby="wkTitle">
@@ -247,7 +378,7 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
       <h2 id="wkTitle">Workers</h2>
       <button class="toggle" id="wkClose" aria-label="Close">Close ✕</button>
     </div>
-    <p class="hint">Workers are shown by position and a fixed code instead of the name – click the code to open the worker’s card in Ragic (Ragic login required). Alerts: <b>no hours</b> = on site but no hours booked for 2+ working days · <b>&gt;12 h</b> days (last 4 weeks) · <b>&gt;60 h</b> weeks and <b>avg &gt;48 h</b>/week (last 16 weeks).</p>
+    <p class="hint">Workers are shown by position and a fixed code instead of the name – click the code to open the worker’s card in Ragic (Ragic login required). Alerts: <b>no timesheet</b> = on site but nothing booked in the last completed week (yards without Ragic timesheets are skipped) · <b>other location</b> = hours booked at a different yard than the project in HR · <b>&gt;12 h</b> days (last 4 weeks) · <b>&gt;60 h</b> weeks and <b>avg &gt;48 h</b>/week (last 16 weeks).</p>
     <div class="filters">
       <div class="chips" id="wkChips"></div>
       <input id="wkSearch" type="search" placeholder="Search code, position or project" aria-label="Search">
@@ -257,16 +388,235 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
   </div>
 </div>
 
+<div class="modal" id="posModal" hidden role="dialog" aria-modal="true" aria-labelledby="posTitle">
+  <div class="modal-box compact">
+    <div class="modal-head">
+      <h2 id="posTitle">Missing positions</h2>
+      <button class="toggle" id="posClose" aria-label="Close">✕</button>
+    </div>
+    <p class="hint">Numbers compare people booked on the project with the <b>project manager’s staffing plan</b> in Ragic – they are <b>not</b> requests for new people. Red = fewer than planned, green = more than planned, ✓ = as planned. Hover a number to see the planned count.</p>
+    <div id="posNow"></div>
+    <div class="tablewrap"><table class="pos-table" id="posTable"></table></div>
+  </div>
+</div>
+
 <script>
 const D = /*__DATA__*/null;
 const $ = id => document.getElementById(id);
+// ---------- language: EN (default) / LT. The page is written in English; in LT mode every text that appears
+// on the page (also later in tables and overlays) is translated with the phrase list below. ----------
+let LANG = "en";
+try { LANG = localStorage.getItem("lang") === "lt" ? "lt" : "en"; } catch(e){}
+const LOC = LANG === "lt" ? "lt-LT" : "en-GB";
+const LT_RULES = [   // patterns with numbers first
+  [/in (\d+) manpower request\(s\)/g, "$1 užklausose"], [/\((\d+) wk left\)/g, "(liko $1 sav.)"],
+  [/(\d+) alerts? · /g, "$1 įsp. · "], [/(\d+) workers? to check/g, "$1 darb. patikrinti"],
+  [/(\d+) of (\d+) worker\(s\) shown\./g, "Rodoma $1 iš $2 darb."],
+  [/currently (\d+) days? of history: /g, "dabar istorijos dienų: $1; "], [/(\d+) hours ago/g, "prieš $1 val."], [/(\d+) days ago/g, "prieš $1 d."],
+];
+const LT = {
+  "Daily Overview":"Dienos apžvalga", "Skin: Classic":"Vaizdas: klasikinis", "Skin: Visual":"Vaizdas: grafinis", "Theme":"Tema",
+  "🔒 Management":"🔒 Vadovybė", "🔓 Management · Lock":"🔓 Vadovybė · užrakinti", "Management mode":"Vadovybės režimas",
+  "Labour cost figures are only shown with the management password. They stay visible in this browser tab until you close it or press “Lock”.":"Darbo kaštai rodomi tik įvedus vadovybės slaptažodį. Jie matomi šioje naršyklės kortelėje, kol jos neuždarysite arba nepaspausite „užrakinti“.",
+  "Management password":"Vadovybės slaptažodis", "Unlock":"Atrakinti", "Checking…":"Tikrinama…", "Wrong password.":"Neteisingas slaptažodis.",
+  "Could not unlock in this browser.":"Šioje naršyklėje atrakinti nepavyko.", "Show labour cost (management password)":"Rodyti darbo kaštus (vadovybės slaptažodis)",
+  "Hide labour cost again":"Vėl paslėpti darbo kaštus", "Print or save this section as PDF":"Spausdinti arba išsaugoti šį skyrių kaip PDF",
+  "Week starting":"Savaitė nuo", "Week":"Savaitė", "updated":"atnaujinta", "Data may be outdated":"Duomenys gali būti pasenę",
+  "– the last update was":"– paskutinis atnaujinimas buvo", "The daily update from Ragic has probably failed.":"Kasdienis atnaujinimas iš Ragic greičiausiai nepavyko.",
+  // attention
+  "⚠ Attention required":"⚠ Reikia dėmesio", "The most urgent points from all sections below. Click one for details.":"Svarbiausi dalykai iš visų skyrių. Spustelėkite punktą, kad pamatytumėte detales.",
+  "still needed":"dar trūksta", "Manpower request for":"Užklausa", "is overdue":"vėluoja", "Needed in":"Reikia", "(this week)":"(šią savaitę)", "(next week)":"(kitą savaitę)",
+  "selected people are not planned in Human Rotation":"atrinkti žmonės nesuplanuoti Human Rotation", "selected person is not planned in Human Rotation":"atrinktas žmogus nesuplanuotas Human Rotation",
+  "rotation changed by hand or not planned yet":"rotacija pakeista rankiniu būdu arba dar nesuplanuota",
+  "people below the PM’s plan this week":"žm. mažiau nei PM plane šią savaitę", "workers on site without a timesheet for":"darb. objekte be darbo laiko įrašų už",
+  "Hours may be missing – cannot be billed":"Gali trūkti valandų – negalėsime jų išrašyti", "workers had weeks over 60 hours":"darb. turėjo savaičių virš 60 val.",
+  "Dutch law: max. 60 h a week (last 16 weeks)":"NL įstatymas: maks. 60 val. per savaitę (paskutinės 16 sav.)", "workers booked hours at another location":"darb. įrašė valandas kitoje vietoje",
+  "HR card or timesheet may be wrong":"Gali būti klaida HR kortelėje arba darbo laiko įraše", "active people at home without a project":"aktyvūs žmonės namie be projekto",
+  "Available to assign":"Galima priskirti",
+  // KPIs
+  "On site":"Objekte", "In workshops":"Cechuose", "Scheduled to travel":"Suplanuoti išvykti", "At home (rotation)":"Namie (rotacija)", "incl.":"iš jų",
+  "without a project":"be projekto", "Unassigned resources (at home)":"Nepriskirti resursai (namie)", "Unassigned resources":"Nepriskirti resursai",
+  "active · at home · no project":"aktyvūs · namie · be projekto", "Active workforce":"Aktyvūs darbuotojai", "Active projects":"Aktyvūs projektai",
+  "Below PM plan":"Mažiau nei PM plane", "vs. staffing plan, not requests":"pagal PM planą, ne pagal užklausas", "People still needed":"Dar trūksta žmonių",
+  "Hours booked":"Įrašytos valandos", "(unassigned)":"(nepriskirta)", "30 days":"30 d.", "90 days":"90 d.", "180 days":"180 d.", "last 30 days":"paskutinės 30 d.", "Labour cost":"Darbo kaštai", "h since start":"val. nuo pradžios",
+  "since start (estimate)":"nuo pradžios (įvertis)", "no change vs previous day":"be pokyčių nuo vakar", "vs previous day":"nuo vakar",
+  // changes + trend
+  "What changed":"Kas pasikeitė", "This is the first snapshot. From tomorrow this list shows what changed since the previous update.":"Tai pirmasis duomenų rinkinys. Nuo rytojaus čia matysite, kas pasikeitė nuo ankstesnio atnaujinimo.",
+  "No earlier data to compare yet.":"Dar nėra ankstesnių duomenų palyginimui.", "Compared with":"Palyginta su", "No changes since the previous update.":"Nuo ankstesnio atnaujinimo pokyčių nėra.",
+  "People on site":"Žmonės objekte", "New active project":"Naujas aktyvus projektas", "Project no longer active":"Projektas nebeaktyvus", "on site":"objekte",
+  "staffing balance":"personalo balansas", "New manpower request":"Nauja papildomų žmonių užklausa", "Reserved":"Rezervuota",
+  "Workers without timesheet entries last week":"Darbuotojai be darbo laiko įrašų praeitą savaitę", "Workers booking hours at another location":"Darbuotojai, įrašantys valandas kitoje vietoje",
+  "Workers with days over 12 h":"Darbuotojai su dienomis virš 12 val.", "Workers with weeks over 60 h":"Darbuotojai su savaitėmis virš 60 val.", "Workers averaging over 48 h/week":"Darbuotojai, kurių vidurkis virš 48 val./sav.",
+  "people":"žmonės", "project":"projektas", "staffing":"personalas", "request":"užklausa", "hours":"valandos",
+  "Trend":"Tendencija", "One point per daily update. Switch lines on and off and choose the period; history builds up with every update.":"Vienas taškas – vienas kasdienis atnaujinimas. Linijas galima įjungti ir išjungti, pasirinkti laikotarpį; istorija kaupiasi su kiekvienu atnaujinimu.",
+  "The chart appears after the second daily update (":"Grafikas atsiras po antro kasdienio atnaujinimo (", "on site today).":"šiandien objekte).",
+  "Switch on at least one line.":"Įjunkite bent vieną liniją.", "At home":"Namie",
+  // projects
+  "Projects":"Projektai", "Project":"Projektas", "Period":"Laikotarpis", "Workshop":"Cechas", "Scheduled":"Suplanuoti", "Home":"Namie", "Required":"Reikia",
+  "Short / spare":"Trūksta / perteklius", "(ended)":"(baigėsi)", "Internal / other assignments":"Vidiniai / kiti priskyrimai", "not in Ragic":"nėra Ragic",
+  "This yard does not book timesheets in Ragic – no hours, cost or worker alerts":"Ši aikštelė nepildo darbo laiko Ragic – nėra valandų, kaštų ir darbuotojų įspėjimų",
+  "On site now:":"Dabar objekte:", "Nobody on site right now.":"Šiuo metu objekte nieko nėra.", "No staffing plan for this project in Ragic.":"Šiam projektui Ragic nėra personalo plano.",
+  "Planned by PM (balance)":"PM planas (balansas)", "net":"grynasis",
+  "All active projects. Click a row for the position breakdown and the 8-week staffing plan. Short / spare = people booked minus the":"Visi aktyvūs projektai. Spustelėkite eilutę – pamatysite pareigas ir 8 savaičių personalo planą. Trūksta / perteklius = suplanuoti žmonės minus",
+  "project manager’s staffing plan":"projekto vadovo personalo planas",
+  "this week (red = fewer than planned in at least one job). This is not a request for new people – see “Additional manpower requests”.":"šią savaitę (raudona = bent vienose pareigose mažiau nei planuota). Tai nėra prašymas naujų žmonių – žr. „Papildomų žmonių užklausos“.",
+  // hours
+  "“Hours real” from the task lists since each project started:":"„Hours real“ iš užduočių sąrašų nuo kiekvieno projekto pradžios:", "and about":"ir apie", "labour cost":"darbo kaštų",
+  "in total;":"iš viso;", "in the last 30 days.":"per paskutines 30 d.",
+  "Yards running several projects (e.g. SPG) include all their projects. Click a row for the split by project and position, and for the worker alerts.":"Aikštelės su keliais projektais (pvz., SPG) apima visus savo projektus. Spustelėkite eilutę – pamatysite padalijimą pagal projektus ir pareigas bei darbuotojų įspėjimus.",
+  "🔒 Labour cost is shown in management mode only.":"🔒 Darbo kaštai rodomi tik vadovybės režimu.", "Labour cost is an":"Darbo kaštai yra", "estimate":"įvertis",
+  ": own staff = net hourly rate from Qualification ×":": savi darbuotojai = neto valandinis įkainis iš Qualification ×", "in Lithuania (income tax, Sodra) or ×":"Lietuvoje (GPM, Sodra) arba ×",
+  "on business trips (assumes":"komandiruotėse (laikoma, kad", "of net pay is salary, the rest tax-free per diem); subcontractors =":"neto pajamų yra alga, likusi dalis – neapmokestinami dienpinigiai); subrangovai =",
+  "€/h invoice.":"€/val. pagal sąskaitą.", "of own-staff hours use the worker’s own rate, the rest the average rate of the position.":"savų darbuotojų valandų skaičiuojama pagal asmeninį įkainį, likusios – pagal pareigų vidurkį.",
+  "Not in Ragic:":"Nėra Ragic:", "have people on site but do not book timesheets in Ragic, so they have no hours, cost or worker alerts here.":"turi žmonių objekte, bet nepildo darbo laiko Ragic, todėl čia nėra jų valandų, kaštų ir darbuotojų įspėjimų.",
+  "No booked hours found.":"Įrašytų valandų nerasta.", "Project / yard":"Projektas / aikštelė", "Hours total":"Valandos iš viso", "Hours last 30 days":"Valandos per 30 d.",
+  "Cost last 30 days":"Kaštai per 30 d.", "Booked":"Įrašyta", "Main positions":"Pagrindinės pareigos", "Worker alerts":"Darbuotojų įspėjimai", "Total":"Iš viso",
+  "Since the start":"Nuo pradžios", "Hours":"Valandos", "Last 30 days":"Paskutinės 30 d.", "No hours booked in this period.":"Šiuo laikotarpiu valandų neįrašyta.",
+  "and labour cost":"ir darbo kaštai", "by position":"pagal pareigas", "No hours in this period.":"Šiuo laikotarpiu valandų nėra.", "no hours":"nėra valandų", "Workers":"Darbuotojai",
+  // staffing outlook + workforce
+  "Staffing outlook":"Personalo prognozė", "Compared with the":"Palyginta su", "in Ragic, not with requests for new people. Red = fewer people than planned (sum over all jobs), green = every job staffed as planned (number = more than planned). Hover a cell for the positions. Only projects with a staffing plan in Ragic are shown.":"Ragic, ne su prašymais naujų žmonių. Raudona = mažiau žmonių nei planuota (visų pareigų suma), žalia = visos pareigos užpildytos kaip planuota (skaičius = daugiau nei planuota). Užveskite pelę ant langelio – pamatysite pareigas. Rodomi tik projektai, turintys personalo planą Ragic.",
+  "No staffing plans found.":"Personalo planų nerasta.", "Total shortage":"Iš viso trūksta", "short:":"trūksta:",
+  "Workforce by position":"Darbuotojai pagal pareigas", "active people":"aktyvūs žmonės", "own staff":"savi darbuotojai", "via subcontractors":"per subrangovus", "Other":"Kita",
+  "Balance by position · this week":"Balansas pagal pareigas · ši savaitė", "Sum over all planned projects. Negative = positions still to be filled.":"Visų suplanuotų projektų suma. Neigiama = dar neužpildytos vietos.",
+  "All planned positions are filled this week.":"Šią savaitę visos suplanuotos vietos užpildytos.",
+  // requests
+  "Additional manpower requests":"Papildomų žmonių užklausos",
+  "Requests from the last 4 weeks and upcoming weeks. The request is only the instruction – every selected person is checked in":"Paskutinių 4 savaičių ir ateinančių savaičių užklausos. Užklausa yra tik nurodymas – kiekvienas atrinktas žmogus tikrinamas",
+  ", because rotation can be changed by hand.":", nes rotacija gali būti pakeista rankiniu būdu.", "= selected and still planned for this project in rotation ·":"= atrinkti ir rotacijoje vis dar suplanuoti šiam projektui ·",
+  "= arrival confirmed ·":"= atvykimas patvirtintas ·", "= already on site ·":"= jau objekte ·", "= requested minus reserved ·":"= prašoma minus rezervuota ·",
+  "= selected people that Human Rotation does not (yet) have on this project – other project, no project or missing. Click a row to see who.":"= atrinkti žmonės, kurių Human Rotation (dar) neturi šiame projekte – kitas projektas, be projekto arba nėra. Spustelėkite eilutę – pamatysite, kas.",
+  "No recent requests.":"Naujų užklausų nėra.", "Week needed":"Reikalinga savaitė", "Position":"Pareigos", "Requested":"Prašoma", "Confirmed":"Patvirtinta", "Working":"Dirba",
+  "Still needed":"Dar trūksta", "Status":"Būsena", "Open":"Atvira", "Unconfirmed":"Nepatvirtinta", "Completed":"Įvykdyta", "now":"dabar", "not in rotation":"nėra rotacijoje",
+  "Selected person":"Atrinktas žmogus", "Now in Human Rotation":"Dabar Human Rotation", "Ready to travel":"Pasiruošęs vykti", "✓ working on site":"✓ dirba objekte",
+  "arrival confirmed":"atvykimas patvirtintas", "planned, not confirmed":"suplanuota, nepatvirtinta", "rotation has another project":"rotacijoje kitas projektas",
+  "no project in rotation":"rotacijoje be projekto", "not in Human Rotation":"nėra Human Rotation", "Nobody selected yet.":"Dar niekas neatrinktas.",
+  "Compare with the PM’s staffing plan":"Palyginti su PM personalo planu", "Open the request in Ragic":"Atidaryti užklausą Ragic",
+  "selected person(s) are not planned for this project in Human Rotation (other project, no project or missing)":"atrinkti žmonės nesuplanuoti šiam projektui Human Rotation (kitas projektas, be projekto arba nėra)",
+  // workers overlay
+  "Close ✕":"Uždaryti ✕", "Close":"Uždaryti", "All alerts":"Visi įspėjimai", "No timesheet last week":"Nėra įrašų praeitą savaitę", "Other location":"Kita vieta",
+  "> 12 h days":"> 12 val. dienos", "> 60 h weeks":"> 60 val. savaitės", "Avg > 48 h":"Vid. > 48 val.", "Everyone":"Visi", "Search code, position or project":"Ieškoti kodo, pareigų ar projekto",
+  "Worker":"Darbuotojas", "Last 30 days h":"Val. per 30 d.", "Last booking":"Paskutinis įrašas", "Total h":"Iš viso val.", "Alerts":"Įspėjimai", "No workers match.":"Atitinkančių darbuotojų nėra.",
+  "All projects":"Visi projektai", "· workers and alerts":"· darbuotojai ir įspėjimai", "no timesheet":"nėra įrašų", "hours booked at":"valandos įrašytos", "(max":"(maks.", "avg":"vid.", "h/wk":"val./sav.",
+  "Workers are shown by position and a fixed code instead of the name – click the code to open the worker’s card in Ragic (Ragic login required). Alerts:":"Darbuotojai rodomi pagal pareigas ir pastovų kodą vietoj vardo – spustelėkite kodą, kad atidarytumėte darbuotojo kortelę Ragic (reikia prisijungti prie Ragic). Įspėjimai:",
+  "= on site but nothing booked in the last completed week (yards without Ragic timesheets are skipped) ·":"= objekte, bet per paskutinę pilną savaitę nieko neįrašyta (aikštelės be Ragic darbo laiko netikrinamos) ·",
+  "other location":"kita vieta", "= hours booked at a different yard than the project in HR ·":"= valandos įrašytos kitoje aikštelėje nei projektas HR ·",
+  "days (last 4 weeks) ·":"dienos (paskutinės 4 sav.) ·", "weeks and":"savaitės ir", "/week (last 16 weeks).":"/sav. (paskutinės 16 sav.).",
+  // positions overlay
+  "Missing positions":"Trūkstamos pareigos", "· compared with the PM’s staffing plan":"· palyginta su PM personalo planu",
+  "Numbers compare people booked on the project with the":"Skaičiai lygina projekte suplanuotus žmones su", "in Ragic – they are":"Ragic – tai",
+  "requests for new people. Red = fewer than planned, green = more than planned, ✓ = as planned. Hover a number to see the planned count.":"prašymai naujų žmonių. Raudona = mažiau nei planuota, žalia = daugiau nei planuota, ✓ = kaip planuota. Užveskite pelę ant skaičiaus – pamatysite planuotą kiekį.",
+  "not":"ne", "This week":"Šią savaitę", "the plan still has empty places for:":"plane dar yra laisvų vietų:", "✓ Every place in the plan is filled this week":"✓ Šią savaitę visos plano vietos užpildytos",
+  "· now":"· dabar", "Planned":"Planuota", "fewer than planned":"mažiau nei planuota", "more than planned":"daugiau nei planuota", "as planned":"kaip planuota",
+  // visual skin
+  "👷 Where are our people today?":"👷 Kur šiandien mūsų žmonės?", "Every square is a small group of people. The colour shows where they are right now.":"Kiekvienas kvadratėlis – nedidelė žmonių grupė. Spalva rodo, kur jie yra dabar.",
+  "of our":"iš mūsų", "people are working on a project site today.":"žmonių šiandien dirba projektų objektuose.", "■ 1 square =":"■ 1 kvadratėlis =",
+  "working at a client’s shipyard":"dirba kliento laivų statykloje", "In our workshops":"Mūsų cechuose", "working in Lithuania":"dirba Lietuvoje", "Travelling soon":"Netrukus išvyksta",
+  "booked to leave for a project":"suplanuota išvykti į projektą", "resting between trips":"ilsisi tarp kelionių", "no status in Ragic":"Ragic be būsenos",
+  "🏗️ Our projects right now":"🏗️ Mūsų projektai dabar", "Big number = people working there today. Green = staffed as the project manager planned, red = fewer people than planned in some jobs.":"Didelis skaičius = šiandien ten dirbantys žmonės. Žalia = personalas kaip suplanavo projekto vadovas, raudona = kai kuriose pareigose mažiau žmonių nei planuota.",
+  "people on site":"žm. objekte", "– No staffing plan":"– Nėra personalo plano", "below PM plan":"mažiau nei PM plane", "✓ Matches PM plan":"✓ Atitinka PM planą",
+  "places in the PM’s plan filled this week":"PM plano vietų užpildyta šią savaitę", "more than planned in other jobs":"daugiau nei planuota kitose pareigose",
+  "worked in the last 30 days":"dirbta per paskutines 30 d.", "labour cost so far":"darbo kaštai iki šiol", "(estimate)":"(įvertis)", "Show which jobs are below the PM’s plan":"Rodyti, kuriose pareigose mažiau nei PM plane",
+  "“Below plan” is measured against the":"„Mažiau nei plane“ matuojama pagal", "in Ragic (how many people each job should have).":"Ragic (kiek žmonių turi būti kiekvienose pareigose).",
+  "It is":"Tai", "an official request for new people – real requests are listed in":"oficialus prašymas naujų žmonių – tikros užklausos išvardytos skyriuje", "further down.":"žemiau.",
+  "📆 People vs. the PM’s plan – coming weeks":"📆 Žmonės pagal PM planą – ateinančios savaitės",
+  "Each circle is one week. ✓ = every job staffed as planned. A red number = how many people fewer than planned that week (darker red = 3 or more). Click a project to see the jobs.":"Kiekvienas apskritimas – viena savaitė. ✓ = visos pareigos užpildytos kaip planuota. Raudonas skaičius = kiek žmonių mažiau nei planuota tą savaitę (tamsiau raudona = 3 ir daugiau). Spustelėkite projektą – pamatysite pareigas.",
+  "No staffing plans yet.":"Personalo planų dar nėra.", "Show positions":"Rodyti pareigas", "all positions filled":"visos vietos užpildytos", "missing":"trūksta",
+  "🕒 Work done in the last 30 days":"🕒 Atliktas darbas per paskutines 30 d.", "Hours written in the task lists. Longer bar = more work.":"Valandos iš užduočių sąrašų. Ilgesnė juosta = daugiau darbo.",
+  "No hours in the last 30 days.":"Per paskutines 30 d. valandų nėra.", "🛠️ Which jobs do the work?":"🛠️ Kokios pareigos atlieka darbą?", "Share of all hours since the projects started, by job.":"Visų valandų dalis nuo projektų pradžios pagal pareigas.",
+  "Other jobs":"Kitos pareigos", "No hours yet.":"Valandų dar nėra.", "🔎 Things to check":"🔎 Ką patikrinti", "Click “See who” to get the list. The codes open the worker’s card in Ragic.":"Spustelėkite „Kas tai“ – gausite sąrašą. Kodai atidaro darbuotojo kortelę Ragic.",
+  "workers were on site but have no timesheet for last week":"darb. buvo objekte, bet neturi darbo laiko įrašų už praeitą savaitę",
+  "Maybe hours were not entered – money we cannot bill. Yards that do not use Ragic timesheets are not checked.":"Galbūt valandos neįrašytos – pinigai, kurių negalėsime išrašyti. Aikštelės, nenaudojančios Ragic darbo laiko, netikrinamos.",
+  "workers booked hours at another location than their project in Ragic":"darb. įrašė valandas kitoje vietoje nei jų projektas Ragic", "Either the worker moved or the HR card / timesheet is wrong.":"Arba darbuotojas persikėlė, arba klaida HR kortelėje / darbo laiko įraše.",
+  "workers had days longer than 12 hours (last 4 weeks)":"darb. turėjo dienų ilgesnių nei 12 val. (paskutinės 4 sav.)", "Dutch law allows max. 12 hours a day.":"NL įstatymas leidžia maks. 12 val. per dieną.",
+  "workers had weeks over 60 hours (last 16 weeks)":"darb. turėjo savaičių virš 60 val. (paskutinės 16 sav.)", "Dutch law allows max. 60 hours a week.":"NL įstatymas leidžia maks. 60 val. per savaitę.",
+  "workers average more than 48 hours a week (16 weeks)":"darb. vidutiniškai dirba daugiau nei 48 val. per savaitę (16 sav.)", "The long-term legal average is 48 hours.":"Ilgalaikis teisėtas vidurkis – 48 val.",
+  "See who →":"Kas tai →", "“Extra people asked for”":"„Papildomai prašomi žmonės“", "“Additional manpower requests”":"„Papildomų žmonių užklausos“", "🙋 Extra people asked for":"🙋 Papildomai prašomi žmonės", "Requests from project managers. The bar shows how many people we already found.":"Projektų vadovų užklausos. Juosta rodo, kiek žmonių jau radome.",
+  "found":"rasta", "✓ all":"✓ visi", "confirmed":"patvirtinta", "working":"dirba", "not planned in rotation":"nesuplanuota rotacijoje", "No open requests.":"Atvirų užklausų nėra.", "week":"savaitė",
+  // footer
+  "Source:":"Šaltinis:", "aggregated daily":"atnaujinama kasdien", "names only in manpower request details":"vardai tik užklausų detalėse", "snapshot":"duomenys",
+};
+let LT_RE = null;
+function trText(s){
+  if (!s || !/[A-Za-z]/.test(s)) return s;
+  for (const [re, to] of LT_RULES) s = s.replace(re, to);
+  if (!LT_RE){
+    const keys = Object.keys(LT).sort((a, b) => b.length - a.length).map(k => {
+      const e = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return (/^\w/.test(k) ? "(?<![\\w])" : "") + e + (/\w$/.test(k) ? "(?![\\w])" : "");
+    });
+    LT_RE = new RegExp(keys.join("|"), "g");
+  }
+  return s.replace(LT_RE, m => LT[m] ?? m).replace(/\b(\d+) days\b/g, "$1 d.");
+}
+const TR_DONE = new WeakMap();   // node/element -> text already translated (never translate twice)
+function translate(root){
+  if (LANG !== "lt") return;
+  const skip = n => n.parentElement && n.parentElement.closest("script,style,.notr");
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()){
+    if (skip(n) || TR_DONE.get(n) === n.nodeValue) continue;
+    const t = trText(n.nodeValue); if (t !== n.nodeValue) n.nodeValue = t;
+    TR_DONE.set(n, t);
+  }
+  (root.querySelectorAll ? [root, ...root.querySelectorAll("[title],[placeholder],[aria-label]")] : []).forEach(el => {
+    if (!el.getAttribute || el.closest(".notr")) return;
+    const done = TR_DONE.get(el) || {};
+    for (const a of ["title", "placeholder", "aria-label"]){
+      const v = el.getAttribute(a);
+      if (v && done[a] !== v){ const t = trText(v); if (t !== v) el.setAttribute(a, t); done[a] = t; }
+    }
+    TR_DONE.set(el, done);
+  });
+}
+// ---------- management mode: labour cost is encrypted with a second password (build.py encrypt_costs) ----------
+function mergeCosts(t, s){
+  for (const k in s){
+    if (s[k] && typeof s[k] === "object" && t[k] && typeof t[k] === "object" && !(k === "cost_model" || k === "position_cost")) mergeCosts(t[k], s[k]);
+    else if (s[k] != null) t[k] = s[k];
+  }
+}
+try {   // costs unlocked earlier in this browser tab
+  const s = D.costs_enc && JSON.parse(sessionStorage.getItem("mgmt") || "null");
+  if (s && s.g === D.generated) mergeCosts(D, s.c);
+} catch(e){}
+const COSTS = D.cost_total != null;
+document.documentElement.classList.toggle("nocost", !COSTS);
+async function unlockCosts(password){
+  const e = D.costs_enc, b = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const salt = b(e.s), nonce = b(e.n), ct = b(e.c), tag = b(e.t), sub = crypto.subtle;
+  const base = await sub.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = new Uint8Array(await sub.deriveBits({name: "PBKDF2", hash: "SHA-256", salt, iterations: e.i}, base, 512));
+  const hk = raw => sub.importKey("raw", raw, {name: "HMAC", hash: "SHA-256"}, false, ["sign"]);
+  const ek = await hk(bits.slice(0, 32)), mk = await hk(bits.slice(32));
+  const msg = new Uint8Array(salt.length + nonce.length + ct.length);
+  msg.set(salt); msg.set(nonce, salt.length); msg.set(ct, salt.length + nonce.length);
+  const t2 = new Uint8Array(await sub.sign("HMAC", mk, msg));
+  if (t2.length !== tag.length || t2.some((v, i) => v !== tag[i])) return false;   // wrong password
+  const blocks = await Promise.all(Array.from({length: Math.ceil(ct.length / 32)}, (_, i) => {
+    const m = new Uint8Array(20); m.set(nonce); new DataView(m.buffer).setUint32(16, i);
+    return sub.sign("HMAC", ek, m);
+  }));
+  const ks = blocks.map(x => new Uint8Array(x));
+  const plain = ct.map((v, i) => v ^ ks[i >> 5][i & 31]);
+  sessionStorage.setItem("mgmt", JSON.stringify({g: D.generated, c: JSON.parse(new TextDecoder().decode(plain))}));
+  return true;
+}
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const fmt = n => Number(n || 0).toLocaleString("en-GB");
+const pname = n => n === D.unassigned_key ? "Unassigned resources (at home)" : n;   // display name of a project / pool
+// manpower request status → [colour class, one word]
+const REQ_STATUS = {open:["n","Open"], unconfirmed:["z","Unconfirmed"], confirmed:["p","Confirmed"], completed:["p","Completed"]};
+// state of a selected person in Human Rotation → [colour, text]
+const ROT_STATE = {working:["var(--pos)","✓ working on site"], confirmed:["var(--pos)","arrival confirmed"], planned:["var(--muted)","planned, not confirmed"],
+  elsewhere:["var(--neg)","rotation has another project"], unassigned:["var(--neg)","no project in rotation"], not_in_rotation:["var(--neg)","not in Human Rotation"]};
+const fmt = n => Number(n || 0).toLocaleString(LOC);
+const eur = n => { n = Number(n || 0); const a = Math.abs(n);
+  return a >= 1e6 ? `€${(n/1e6).toFixed(a >= 1e7 ? 1 : 2)}M` : a >= 1e4 ? `€${Math.round(n/1e3)}k` : `€${fmt(Math.round(n))}`; };
+const eurFull = n => "€" + fmt(Math.round(n || 0));
 const STATUS = [
   ["Yes","On site","var(--onsite)"], ["Workshop","Workshop","var(--workshop)"],
   ["Scheduled","Scheduled to travel","var(--scheduled)"], ["Home","At home","var(--home)"], ["Other","Other","var(--other)"]];
-const dateTxt = iso => iso ? new Date(iso + "T00:00:00").toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"}) : "";
-const shortDate = iso => iso ? new Date(iso + "T00:00:00").toLocaleDateString("en-GB", {day:"numeric", month:"short"}) : "";
+const dateTxt = iso => iso ? new Date(iso + "T00:00:00").toLocaleDateString(LOC, {day:"numeric", month:"short", year:"numeric"}) : "";
+const shortDate = iso => iso ? new Date(iso + "T00:00:00").toLocaleDateString(LOC, {day:"numeric", month:"short"}) : "";
 const balCls = v => v < 0 ? "n" : v > 0 ? "p" : "z";
 const sign = v => v > 0 ? "+" + v : String(v);
 
@@ -281,8 +631,39 @@ const sign = v => v > 0 ? "+" + v : String(v);
   };
 })();
 
+// management mode button
+(function(){
+  if (!D.costs_enc) return;
+  const btn = $("mgmt"); btn.hidden = false;
+  if (COSTS){
+    btn.textContent = "🔓 Management · Lock"; btn.title = "Hide labour cost again";
+    btn.onclick = () => { try { sessionStorage.removeItem("mgmt"); } catch(e){} location.reload(); };
+    return;
+  }
+  btn.title = "Show labour cost (management password)";
+  const close = () => { $("mgmtModal").hidden = true; btn.focus(); };
+  btn.onclick = () => { $("mgmtModal").hidden = false; $("mgmtMsg").textContent = ""; $("mgmtPw").value = ""; $("mgmtPw").focus(); };
+  $("mgmtClose").onclick = close;
+  $("mgmtModal").addEventListener("click", e => { if (e.target === $("mgmtModal")) close(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("mgmtModal").hidden) close(); });
+  $("mgmtForm").onsubmit = async e => {
+    e.preventDefault();
+    $("mgmtMsg").textContent = "Checking…"; $("mgmtGo").disabled = true;
+    let ok = false;
+    try { ok = await unlockCosts($("mgmtPw").value); } catch(err){ $("mgmtMsg").textContent = "Could not unlock in this browser."; }
+    $("mgmtGo").disabled = false;
+    if (ok) location.reload(); else if ($("mgmtMsg").textContent === "Checking…") $("mgmtMsg").textContent = "Wrong password.";
+  };
+})();
+
 const updated = new Date(D.generated);
-$("sub").innerHTML = `<span class="badge">Week ${D.week}</span> &nbsp;${dateTxt(D.date)} · updated ${updated.toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"})}`;
+$("sub").innerHTML = `<span class="badge">Week ${D.week}</span> &nbsp;${dateTxt(D.date)} · updated ${updated.toLocaleString(LOC,{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"})}`;
+// the daily update normally runs every night; older data means the update failed
+const ageH = (Date.now() - updated) / 36e5;
+if (ageH > 36){
+  $("stale").hidden = false;
+  $("stale").innerHTML = `⚠ <b>Data may be outdated</b> – the last update was ${ageH < 72 ? Math.round(ageH) + " hours" : Math.round(ageH/24) + " days"} ago. The daily update from Ragic has probably failed.`;
+}
 
 // ---------- KPIs ----------
 const prevT = D.trend.length > 1 ? D.trend[D.trend.length - 2] : null;
@@ -294,16 +675,18 @@ const kpis = [
   ["On site", ws.Yes || 0, "var(--onsite)", prevT ? (ws.Yes||0) - prevT.onsite : null],
   ["In workshops", ws.Workshop || 0, "var(--workshop)"],
   ["Scheduled to travel", ws.Scheduled || 0, "var(--scheduled)"],
-  ["At home (rotation)", ws.Home || 0, "var(--home)"],
+  ["At home (rotation)", ws.Home || 0, "var(--home)", null, D.workforce.unassigned ? `incl. ${D.workforce.unassigned} without a project` : ""],
+  ["Unassigned resources", D.workforce.unassigned || 0, "var(--accent)", null, "active · at home · no project"],
   ["Active workforce", D.workforce.total, null, prevT ? D.workforce.total - prevT.active : null],
   ["Active projects", real.length, null],
-  ["Positions short · W" + D.week, -shortNow, "var(--neg)"],
-  ["Open manpower requests", openReq.reduce((s,r)=>s+r.gap,0), null, null, `${openReq.length} request(s)`],
-  ["Hours booked · last 7 days", D.hours_last7 || 0, null, null, `${fmt(D.hours_total)} h since start`],
+  ["Below PM plan · W" + D.week, -shortNow, "var(--neg)", null, "vs. staffing plan, not requests"],
+  ["People still needed", openReq.reduce((s,r)=>s+r.gap,0), null, null, `in ${openReq.length} manpower request(s)`],
+  ["Hours booked · last 30 days", D.hours_last30 || 0, null, null, `${fmt(D.hours_total)} h since start`],
+  COSTS ? ["Labour cost · last 30 days", null, null, null, `${eur(D.cost_total)} since start (estimate)`, eur(D.cost_last30)] : null,
 ];
-$("kpis").innerHTML = kpis.map(([l,v,c,d,note]) => `
+$("kpis").innerHTML = kpis.filter(Boolean).map(([l,v,c,d,note,text]) => `
   <div class="card kpi"><div class="label">${c?`<span class="dot" style="background:${c}"></span>`:""}${esc(l)}</div>
-  <div class="value">${fmt(v)}</div>
+  <div class="value">${text ?? fmt(v)}</div>
   <div class="delta">${d === null || d === undefined ? (note||"") : d === 0 ? "no change vs previous day" :
      `<span class="${d>0?"up":"down"}">${d>0?"▲":"▼"} ${Math.abs(d)}</span> vs previous day`}</div></div>`).join("");
 
@@ -320,25 +703,53 @@ if (!C.since) {
 }
 
 // ---------- trend chart ----------
-function lineChart(points, w=560, h=170){
-  if (points.length < 2) return `<p class="muted">Trend appears after the second daily update (currently ${points.length} day${points.length===1?"":"s"} of history: ${fmt(points[0]?.onsite)} on site today).</p>`;
-  const pad = {l:34,r:10,t:10,b:22};
-  const vals = points.map(p => p.onsite);
+// lines the viewer can switch on and off: [key, label, colour, shown by default]
+const TREND_SERIES = [["onsite","On site","var(--onsite)",true],["workshop","In workshops","var(--workshop)",false],
+  ["scheduled","Scheduled to travel","var(--scheduled)",false],["home","At home","var(--home)",false],
+  ["active","Active workforce","var(--ink)",false],["unassigned","Unassigned resources","var(--accent)",false],
+  ["below_plan","Below PM plan","var(--neg)",false],["still_needed","People still needed","var(--pos)",false]];
+function lineChart(points, keys, w=560, h=180){
+  const has = k => points.some(p => p[k] != null);
+  keys = keys.filter(has);
+  if (points.length < 2) return `<p class="muted">The chart appears after the second daily update (currently ${points.length} day${points.length===1?"":"s"} of history: ${fmt(points[0]?.onsite)} on site today).</p>`;
+  if (!keys.length) return `<p class="muted">Switch on at least one line.</p>`;
+  const pad = {l:38,r:10,t:10,b:22};
+  const vals = points.flatMap(p => keys.map(k => p[k]).filter(v => v != null));
   const lo = Math.min(...vals), hi = Math.max(...vals);
-  const y0 = Math.max(0, Math.floor((lo - (hi-lo)*0.2 - 1))), y1 = Math.ceil(hi + (hi-lo)*0.2 + 1);
+  const y0 = Math.max(0, Math.floor(lo - (hi-lo)*0.15 - 1)), y1 = Math.ceil(hi + (hi-lo)*0.15 + 1);
   const X = i => pad.l + i*(w-pad.l-pad.r)/(points.length-1);
   const Y = v => pad.t + (h-pad.t-pad.b)*(1-(v-y0)/(y1-y0));
-  const path = points.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(p.onsite).toFixed(1)}`).join("");
   const ticks = [y0, Math.round((y0+y1)/2), y1];
   const step = Math.max(1, Math.ceil(points.length/6));
-  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="On-site headcount trend">
-    ${ticks.map(t=>`<line x1="${pad.l}" x2="${w-pad.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${pad.l-6}" y="${Y(t)+4}" text-anchor="end">${t}</text>`).join("")}
-    <path d="${path}" fill="none" stroke="var(--onsite)" stroke-width="2"/>
-    ${points.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p.onsite)}" r="${i===points.length-1?3.5:2}" fill="var(--onsite)"><title>${shortDate(p.date)}: ${p.onsite}</title></circle>`).join("")}
+  const dots = points.length <= 45;
+  const lines = keys.map(k => {
+    const [, label, col] = TREND_SERIES.find(s => s[0] === k);
+    const path = points.map((p,i) => p[k] == null ? "" : `${i && points[i-1][k] != null ? "L" : "M"}${X(i).toFixed(1)},${Y(p[k]).toFixed(1)}`).join("");
+    return `<path d="${path}" fill="none" stroke="${col}" stroke-width="2"/>` + points.map((p,i) => p[k] == null || (!dots && i !== points.length-1) ? "" :
+      `<circle cx="${X(i)}" cy="${Y(p[k])}" r="${i===points.length-1?3.5:2}" fill="${col}"><title>${shortDate(p.date)} · ${label}: ${fmt(p[k])}</title></circle>`).join("");
+  }).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Trend chart">
+    ${ticks.map(t=>`<line x1="${pad.l}" x2="${w-pad.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${pad.l-6}" y="${Y(t)+4}" text-anchor="end">${fmt(t)}</text>`).join("")}
+    ${lines}
     ${points.map((p,i)=> i%step===0 || i===points.length-1 ? `<text x="${X(i)}" y="${h-6}" text-anchor="middle">${shortDate(p.date)}</text>` : "").join("")}
   </svg>`;
 }
-$("trend").innerHTML = lineChart(D.trend);
+(function(){
+  let days = 30, on = TREND_SERIES.filter(s => s[3]).map(s => s[0]);
+  try { const s = JSON.parse(localStorage.getItem("trend") || "null"); if (s){ days = s.days || days; on = s.on || on; } } catch(e){}
+  function render(){
+    const from = new Date(new Date(D.date + "T00:00:00") - days * 864e5).toISOString().slice(0,10);
+    const pts = D.trend.filter(p => p.date > from);
+    $("trendRange").innerHTML = [30, 90, 180].map(d => `<button class="pbtn" data-d="${d}" aria-pressed="${d === days}">${d} days</button>`).join("");
+    $("trendLines").innerHTML = TREND_SERIES.map(([k,l,c]) => `<button class="chip" data-k="${k}" aria-pressed="${on.includes(k)}"><span class="dot" style="background:${c};width:8px;height:8px;display:inline-block;margin-right:5px"></span>${l}</button>`).join("");
+    $("trend").innerHTML = lineChart(pts, on);
+    $("trendRange").querySelectorAll("button").forEach(b => b.onclick = () => { days = +b.dataset.d; save(); render(); });
+    $("trendLines").querySelectorAll("button").forEach(b => b.onclick = () => {
+      const k = b.dataset.k; on = on.includes(k) ? on.filter(x => x !== k) : on.concat(k); save(); render(); });
+  }
+  const save = () => { try { localStorage.setItem("trend", JSON.stringify({days, on})); } catch(e){} };
+  render();
+})();
 
 function spark(name){
   const pts = D.trend.map(t => t.projects[name] ?? 0);
@@ -360,29 +771,30 @@ function period(p){
 }
 function detail(p){
   const pos = Object.entries(p.positions_onsite);
-  const left = pos.length ? `<table><thead><tr><th>Position (on site)</th><th class="num">People</th></tr></thead><tbody>${
-      pos.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">Nobody on site right now.</p>`;
+  const left = pos.length ? `<div class="onsite-list"><span class="muted" style="background:none;padding:0">On site now:</span>${
+      pos.map(([k,v])=>`<span>${esc(k)}<b>${v}</b></span>`).join("")}</div>` : `<p class="muted">Nobody on site right now.</p>`;
   let right = `<p class="muted">No staffing plan for this project in Ragic.</p>`;
   if (p.staffing){
-    right = `<table><thead><tr><th>Required (balance)</th>${D.weeks.map(w=>`<th class="num">W${w}</th>`).join("")}</tr></thead><tbody>${
-      p.staffing.by_position.map(r=>`<tr><td>${esc(r.position)}</td>${r.required.map((q,i)=>`<td class="num">${q} <span class="bal ${balCls(r.balance[i])}">${sign(r.balance[i])}</span></td>`).join("")}</tr>`).join("")
+    right = `<table class="plan"><thead><tr><th>Planned by PM (balance)</th>${D.weeks.map((w,i)=>`<th class="num w${i}">W${w}</th>`).join("")}</tr></thead><tbody>${
+      p.staffing.by_position.map(r=>`<tr><td>${esc(r.position)}</td>${r.required.map((q,i)=>`<td class="num w${i}"><span class="q">${q}</span><span class="bal ${balCls(r.balance[i])}">${sign(r.balance[i])}</span></td>`).join("")}</tr>`).join("")
     }</tbody></table>`;
   }
-  return `<div class="detailgrid"><div>${left}</div><div class="tablewrap" style="margin:0;padding:0">${right}</div></div>`;
+  return `${left}${right}`;
 }
 function renderProjects(){
-  const cols = `<thead><tr><th>Project</th><th>Country</th><th>Period</th>
+  const cols = `<thead><tr><th>Project</th><th>Period</th>
     <th class="num">On site</th><th class="num">Workshop</th><th class="num">Scheduled</th><th class="num">Home</th>
-    <th class="num">Required W${D.week}</th><th class="num">Short / spare</th><th>Trend</th><th class="num">Hours booked</th></tr></thead>`;
+    <th class="num">Required W${D.week}</th><th class="num">Short / spare</th><th>Trend</th><th class="num">Hours booked</th><th class="num cst">Labour cost</th></tr></thead>`;
   let rows = "", lastInternal = false;
   D.projects.forEach((p, i) => {
     if (p.internal && !lastInternal){ rows += `<tr><td colspan="11" class="faint" style="padding-top:16px">Internal / other assignments</td></tr>`; lastInternal = true; }
     const st = p.status, s = p.staffing;
-    rows += `<tr class="proj" data-i="${i}"><td><b>${esc(p.name)}</b></td><td>${esc(p.country)}</td><td>${period(p)}</td>
+    rows += `<tr class="proj" data-i="${i}"><td><b>${esc(pname(p.name))}</b>${p.country ? `<span class="cty">${esc(p.country)}</span>` : ""}</td><td class="wrapcell">${period(p)}</td>
       <td class="num"><b>${st.Yes||0}</b></td><td class="num">${st.Workshop||""}</td><td class="num">${st.Scheduled||""}</td><td class="num">${st.Home||""}</td>
       <td class="num">${s ? s.required[0] : `<span class="faint">–</span>`}</td>
       <td class="num">${s ? (s.short[0] < 0 ? `<span class="bal n" title="net ${sign(s.balance[0])}">${s.short[0]}</span>` : `<span class="bal ${balCls(s.balance[0])}">${sign(s.balance[0])}</span>`) : `<span class="faint">–</span>`}</td>
-      <td>${spark(p.name)}</td><td class="num">${p.hours ? fmt(p.hours.total) : `<span class="faint">–</span>`}</td></tr>
+      <td>${spark(p.name)}</td><td class="num">${p.no_ragic_ts ? `<span class="faint" title="This yard does not book timesheets in Ragic – no hours, cost or worker alerts">not in Ragic</span>` : p.hours ? fmt(p.hours.total) : `<span class="faint">–</span>`}</td>
+      <td class="num cst" title="${p.hours ? eurFull(p.hours.cost) : ""}">${p.hours ? eur(p.hours.cost) : `<span class="faint">–</span>`}</td></tr>
       <tr class="detail" data-for="${i}" hidden><td colspan="11">${detail(p)}</td></tr>`;
   });
   $("projects").innerHTML = cols + `<tbody>${rows}</tbody>`;
@@ -396,12 +808,13 @@ renderProjects();
 // ---------- workers overlay ----------
 const WK = (function(){
   const W = D.workers || {workers: [], weeks: [], flag_counts: {}};
-  const FLAGS = [["all","All alerts"],["missing","No hours"],["over12","> 12 h days"],["over60","> 60 h weeks"],["avg48","Avg > 48 h"],["none","Everyone"]];
+  const FLAGS = [["all","All alerts"],["no_ts","No timesheet last week"],["mismatch","Other location"],["over12","> 12 h days"],["over60","> 60 h weeks"],["avg48","Avg > 48 h"],["none","Everyone"]];
   let group = null, flag = "all", lastFocus = null;
   const inGroup = () => group === null ? W.workers : W.workers.filter(w => w.group === group);
   const match = (w, f) => f === "none" || (f === "all" ? w.flags.length > 0 : w.flags.includes(f));
   const alertHtml = w => w.flags.map(f => {
-    if (f === "missing") return `<span class="alert">${w.missing == null ? "no hours in 16 wk" : `no hours ${w.missing} d`}</span>`;
+    if (f === "no_ts") return `<span class="alert">no timesheet W${w.no_ts_week}</span>`;
+    if (f === "mismatch") return `<span class="alert">hours booked at ${esc((w.mismatch || []).join(", "))}</span>`;
     if (f === "over12") return `<span class="alert warn">${w.days_over}× &gt;12 h (max ${w.max_day})</span>`;
     if (f === "over60") return `<span class="alert warn">${w.weeks_over} wk &gt;60 h</span>`;
     if (f === "avg48") return `<span class="alert warn">avg ${w.avg16} h/wk</span>`;
@@ -414,11 +827,11 @@ const WK = (function(){
     const q = $("wkSearch").value.trim().toLowerCase();
     const rows = ws.filter(w => match(w, flag) && (!q || (w.code + " " + w.position + " " + w.project).toLowerCase().includes(q)));
     $("workers").innerHTML = `<thead><tr><th>Worker</th><th>Project</th><th>Status</th>${W.weeks.map(k=>`<th class="num">${k}</th>`).join("")}
-      <th class="num">Last 7 d</th><th>Last booking</th><th class="num">Total h</th><th>Alerts</th></tr></thead><tbody>${
+      <th class="num">Last 30 days h</th><th>Last booking</th><th class="num">Total h</th><th>Alerts</th></tr></thead><tbody>${
       rows.map(w => `<tr><td>${w.rid ? `<a class="code" href="${esc(D.ragic_people_url + w.rid)}" target="_blank" rel="noopener">${esc(w.code)} ↗</a>` : esc(w.code)}${w.sub ? ' <span class="faint">sub</span>' : ""}</td>
-        <td>${esc(w.project)}</td><td class="muted">${esc(w.status === "Yes" ? "On site" : w.status)}</td>
+        <td>${esc(pname(w.project))}</td><td class="muted">${esc(w.status === "Yes" ? "On site" : w.status)}</td>
         ${w.weeks.map(h=>`<td class="num${h > 60 ? " hot" : ""}">${h || '<span class="faint">–</span>'}</td>`).join("")}
-        <td class="num">${w.h7 || '<span class="faint">–</span>'}</td><td class="muted">${w.last ? shortDate(w.last) : "–"}</td>
+        <td class="num">${w.h30 || '<span class="faint">–</span>'}</td><td class="muted">${w.last ? shortDate(w.last) : "–"}</td>
         <td class="num">${fmt(w.total)}</td><td>${alertHtml(w) || '<span class="faint">–</span>'}</td></tr>`).join("") ||
       `<tr><td colspan="${7 + W.weeks.length}" class="muted">No workers match.</td></tr>`}</tbody>`;
     $("wkNote").textContent = `${rows.length} of ${ws.length} worker(s) shown.`;
@@ -450,34 +863,75 @@ const WK = (function(){
   const hs = (D.hours || []).slice();
   // yards/projects that have workers but no booked hours yet still need a row to reach their alerts
   WK.groups.filter(g => !hs.some(h => h.name === g) && WK.alertsIn(g))
-    .forEach(g => hs.push({name: g, total: 0, last7: 0, first: "", last: "", subs: [], positions: {}}));
+    .forEach(g => hs.push({name: g, total: 0, last30: 0, first: "", last: "", subs: [], positions: {}}));
   if (!hs.length){ $("hoursHint").textContent = "No booked hours found."; return; }
-  $("hoursHint").textContent = `“Hours real” from the task lists since each project started: ${fmt(D.hours_total)} h in total, ${fmt(D.hours_last7)} h in the last 7 days. Yards running several projects (e.g. SPG) include all their projects. Click a row for the split by project and position, and for the worker alerts.`;
-  const bars = (entries, tot) => entries.map(([k,v]) => `<div class="row"><div class="name" title="${esc(k)}">${esc(k)}</div>
-      <div class="track"><span style="width:${(v/tot*100).toFixed(1)}%;background:var(--onsite)"></span></div><div class="val">${fmt(v)}</div></div>`).join("");
+  const cm = D.cost_model || {}, src = cm.hours_by_source || {};
+  const own = (src.own_rate || 0) + (src.position_avg || 0);
+  $("hoursHint").innerHTML = `“Hours real” from the task lists since each project started: ${fmt(D.hours_total)} h<span class="cst"> and about <b>${eur(D.cost_total)}</b> labour cost</span> in total; ${fmt(D.hours_last30)} h<span class="cst"> / ${eur(D.cost_last30)}</span> in the last 30 days. Yards running several projects (e.g. SPG) include all their projects. Click a row for the split by project and position, and for the worker alerts.
+    ${COSTS ? "" : `<br><span class="faint">🔒 Labour cost is shown in management mode only.</span>`}
+    <br><span class="faint cst">Labour cost is an <b>estimate</b>: own staff = net hourly rate from Qualification × ${cm.lt_factor} in Lithuania (income tax, Sodra) or × ${cm.trip_factor} on business trips (assumes ${Math.round((cm.trip_salary_share||0)*100)}% of net pay is salary, the rest tax-free per diem); subcontractors = ${cm.sub_rate} €/h invoice.
+    ${own ? `${Math.round((src.own_rate||0)/own*100)}% of own-staff hours use the worker’s own rate, the rest the average rate of the position.` : ""}</span>${(() => {
+      const nr = D.projects.filter(p => p.no_ragic_ts).map(p => p.name);
+      return nr.length ? `<br><span class="faint"><b>Not in Ragic:</b> ${nr.map(esc).join(", ")} have people on site but do not book timesheets in Ragic, so they have no hours, cost or worker alerts here.</span>` : "";
+    })()}`;
+  const bars = (entries, tot, cost = {}) => entries.map(([k,v]) => `<div class="row cost"><div class="name" title="${esc(k)}">${esc(k)}</div>
+      <div class="track" title="${fmt(v)} h${COSTS ? " · " + eurFull(cost[k]) : ""}"><span style="width:${(v/tot*100).toFixed(1)}%;background:var(--onsite)"></span></div>
+      <div class="val">${fmt(v)} h</div><div class="val cst">${eur(cost[k])}</div></div>`).join("");
+  const monthName = m => new Date(m + "-01T00:00:00").toLocaleDateString(LOC, {month: "short"}) + " " + m.slice(2, 4);
+  const monthLong = m => new Date(m + "-01T00:00:00").toLocaleDateString(LOC, {month: "long", year: "numeric"});
+
+  // content of an opened project for one period: "total" or a month index (0..11)
+  function periodView(g, key){
+    const isTotal = key === "total";
+    const p = isTotal ? g : (g.months || [])[key];
+    const subsList = isTotal ? g.subs : p.subs;
+    const pos = Object.entries(p.positions || {});
+    const summary = `<div class="period-sum"><b>${isTotal ? "Since the start" : monthLong(p.m)}:</b> ${fmt(p.total)} h<span class="cst"> · <b>${eur(p.cost)}</b> labour cost</span></div>`;
+    const subs = !subsList.length ? `<p class="muted">No hours booked in this period.</p>`
+      : `<table><thead><tr><th>Project</th><th class="num">Hours</th><th class="num cst">Labour cost</th>${isTotal ? '<th class="num">Last 30 days</th>' : ""}</tr></thead><tbody>${
+          subsList.map(s=>`<tr><td>${esc(s.name)}</td><td class="num">${fmt(s.total)}</td><td class="num cst" title="${eurFull(s.cost)}">${eur(s.cost)}</td>${
+            isTotal ? `<td class="num">${s.last30 ? fmt(s.last30) : '<span class="faint">–</span>'}</td>` : ""}</tr>`).join("")}</tbody></table>`;
+    const posHtml = pos.length ? bars(pos, pos[0][1], p.position_cost) : '<span class="faint">No hours in this period.</span>';
+    return {summary, subs, posHtml};
+  }
+  function periodButtons(g, active){
+    const ms = g.months || [];
+    return `<div class="periods" role="group" aria-label="Period">
+      <button class="pbtn" data-k="total" aria-pressed="${active === "total"}">Total</button>${
+      ms.map((m,i) => `<button class="pbtn" data-k="${i}" aria-pressed="${active === i}" ${m.total ? "" : "disabled"} title="${m.total ? `${fmt(m.total)} h${COSTS ? " · " + eurFull(m.cost) : ""}` : "no hours"}">${monthName(m.m)}</button>`).join("")}</div>`;
+  }
+  function renderDetail(cell, g, key){
+    const v = periodView(g, key);
+    const na = WK.alertsIn(g.name), np = WK.peopleIn(g.name);
+    const btn = np ? `<button class="wkbtn${na ? " has" : ""}" data-g="${esc(g.name)}">${na ? `⚠ ${na} alert${na>1?"s":""} · ` : ""}Workers (${np})</button>` : "";
+    cell.innerHTML = `${(g.months || []).length ? periodButtons(g, key) : ""}${v.summary}
+      <div class="detailgrid"><div>${v.subs}${btn ? `<div style="margin-top:12px">${btn}</div>` : ""}</div>
+      <div><div class="muted" style="font-size:12px;margin-bottom:4px">Hours<span class="cst"> and labour cost</span> by position</div><div class="bars">${v.posHtml}</div></div></div>`;
+    cell.querySelectorAll(".pbtn").forEach(b => b.onclick = e => {
+      e.stopPropagation();
+      renderDetail(cell, g, b.dataset.k === "total" ? "total" : Number(b.dataset.k));
+    });
+    cell.querySelectorAll(".wkbtn").forEach(b => b.onclick = e => { e.stopPropagation(); WK.open(b.dataset.g); });
+  }
+
   let rows = "";
   hs.forEach((g,i) => {
     const pos = Object.entries(g.positions);
     const top = g.total ? pos.slice(0,3).map(([k,v]) => `${esc(k)} ${Math.round(v/g.total*100)}%`).join(" · ") : "";
-    const subs = !g.subs.length ? `<p class="muted">No hours booked yet.</p>`
-      : g.subs.length > 1 || g.subs[0].name !== g.name
-      ? `<table><thead><tr><th>Project</th><th class="num">Hours</th><th class="num">Last 7 days</th></tr></thead><tbody>${
-          g.subs.map(s=>`<tr><td>${esc(s.name)}</td><td class="num">${fmt(s.total)}</td><td class="num">${s.last7?fmt(s.last7):'<span class="faint">–</span>'}</td></tr>`).join("")}</tbody></table>`
-      : `<p class="muted">Single project.</p>`;
-    const na = WK.alertsIn(g.name), np = WK.peopleIn(g.name);
-    const btn = np ? `<button class="wkbtn${na ? " has" : ""}" data-g="${esc(g.name)}">${na ? `⚠ ${na} alert${na>1?"s":""} · ` : ""}Workers (${np})</button>` : "";
+    const na = WK.alertsIn(g.name);
     rows += `<tr class="proj" data-h="${i}"><td><b>${esc(g.name)}</b></td><td class="num"><b>${g.total ? fmt(g.total) : "–"}</b></td>
-      <td class="num">${g.last7 ? fmt(g.last7) : '<span class="faint">–</span>'}</td><td class="muted">${g.first ? `${shortDate(g.first)} – ${dateTxt(g.last)}` : "–"}</td>
+      <td class="num cst" title="${g.cost ? eurFull(g.cost) : ""}"><b>${g.cost ? eur(g.cost) : "–"}</b></td>
+      <td class="num">${g.last30 ? fmt(g.last30) : '<span class="faint">–</span>'}</td><td class="num cst" title="${g.cost30 ? eurFull(g.cost30) : ""}">${g.cost30 ? eur(g.cost30) : '<span class="faint">–</span>'}</td><td class="muted">${g.first ? `${shortDate(g.first)} – ${dateTxt(g.last)}` : "–"}</td>
       <td class="muted">${top}</td><td>${na ? `<span class="alert">⚠ ${na}</span>` : '<span class="faint">–</span>'}</td></tr>
-      <tr class="detail" data-hfor="${i}" hidden><td colspan="6"><div class="detailgrid"><div>${subs}${btn ? `<div style="margin-top:12px">${btn}</div>` : ""}</div>
-        <div><div class="muted" style="font-size:12px;margin-bottom:4px">Hours by position</div><div class="bars">${pos.length ? bars(pos, pos[0][1]) : '<span class="faint">–</span>'}</div></div></div></td></tr>`;
+      <tr class="detail" data-hfor="${i}" hidden><td colspan="8"></td></tr>`;
   });
-  $("hours").innerHTML = `<thead><tr><th>Project / yard</th><th class="num">Hours total</th><th class="num">Last 7 days</th><th>Booked</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>`;
+  $("hours").innerHTML = `<thead><tr><th>Project / yard</th><th class="num">Hours total</th><th class="num cst">Labour cost</th><th class="num">Hours last 30 days</th><th class="num cst">Cost last 30 days</th><th>Booked</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>`;
   $("hours").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
-    const d = $("hours").querySelector(`tr.detail[data-hfor="${tr.dataset.h}"]`); d.hidden = !d.hidden;
+    const d = $("hours").querySelector(`tr.detail[data-hfor="${tr.dataset.h}"]`);
+    if (d.hidden && !d.firstElementChild.innerHTML) renderDetail(d.firstElementChild, hs[tr.dataset.h], "total");
+    d.hidden = !d.hidden;
     tr.classList.toggle("open", !d.hidden);
   });
-  $("hours").querySelectorAll(".wkbtn").forEach(b => b.onclick = e => { e.stopPropagation(); WK.open(b.dataset.g); });
 })();
 
 // ---------- heatmap ----------
@@ -524,13 +978,76 @@ const WK = (function(){
 (function(){
   const rs = D.requests;
   if (!rs.length){ $("requests").innerHTML = `<tr><td class="muted">No recent requests.</td></tr>`; return; }
-  $("requests").innerHTML = `<thead><tr><th>Week needed</th><th>Project</th><th>Position</th><th class="num">Requested</th><th class="num">Filled</th><th>Status</th><th>Requested on</th></tr></thead><tbody>${
-    rs.map(r => {
-      const past = r.week < D.week;
-      const st = r.gap === 0 ? `<span class="bal p">filled</span>` : past ? `<span class="bal n">${r.gap} missing</span>` : `<span class="bal z">${r.gap} open</span>`;
-      return `<tr${past && r.gap===0 ? ' class="faint"' : ""}><td>W${r.week}${r.week===D.week?' <span class="badge">now</span>':""}</td><td>${esc(r.project)}</td><td>${esc(r.position)}</td>
-        <td class="num">${r.requested}</td><td class="num">${r.filled}</td><td>${st}</td><td class="muted">${shortDate(r.date)}</td></tr>`;
+  $("requests").innerHTML = `<thead><tr><th>Week needed</th><th>Project</th><th>Position</th><th class="num">Requested</th><th class="num">Reserved</th><th class="num">Confirmed</th><th class="num">Working</th><th class="num">Still needed</th><th>Status</th><th>Ragic</th></tr></thead><tbody>${
+    rs.map((r, i) => {
+      const [cls, word] = REQ_STATUS[r.status] || ["z", r.status];
+      const done = r.status === "completed";
+      const ppl = (r.people || []).length
+        ? `<table class="sub"><thead><tr><th>Selected person</th><th>Position</th><th>Now in Human Rotation</th><th>Ready to travel</th></tr></thead><tbody>${
+            r.people.map(x => { const [c, t] = ROT_STATE[x.state] || ["var(--muted)", x.state];
+              return `<tr><td class="notr">${esc(x.name)}</td><td>${esc(x.position)}</td><td style="color:${c}">${t}${x.where ? ` (${esc(x.where)})` : ""}</td><td class="muted">${x.ready && x.state !== "working" ? shortDate(x.ready) : ""}</td></tr>`; }).join("")}</tbody></table>`
+        : `<p class="muted" style="margin:4px 0">Nobody selected yet.</p>`;
+      return `<tr class="proj req${done ? " faint" : ""}" data-r="${i}"><td>W${r.week}${r.week===D.week?' <span class="badge">now</span>':""}</td>
+        <td>${D.projects.some(p => p.name === r.project && p.staffing) ? `<a href="#" class="code" data-p="${esc(r.project)}" title="Compare with the PM’s staffing plan">${esc(r.project)} ›</a>` : esc(r.project)}</td><td>${esc(r.position)}</td>
+        <td class="num">${r.requested}</td><td class="num">${r.reserved}</td><td class="num">${r.confirmed}</td><td class="num">${r.working}</td>
+        <td class="num">${r.gap ? `<b style="color:var(--neg)">${r.gap}</b>` : `<span class="faint">0</span>`}</td>
+        <td><span class="bal ${cls}">${word}</span>${r.changed ? ` <span class="faint" title="${r.changed} selected person(s) are not planned for this project in Human Rotation (other project, no project or missing)">· ${r.changed} not in rotation</span>` : ""}</td>
+        <td><a class="code" href="${esc(r.url)}" target="_blank" rel="noopener" title="Open the request in Ragic">#${r.id} ↗</a></td></tr>
+        <tr class="detail" data-for-r="${i}" hidden><td colspan="10">${ppl}</td></tr>`;
     }).join("")}</tbody>`;
+  $("requests").querySelectorAll("a[data-p]").forEach(a => a.onclick = e => { e.preventDefault(); e.stopPropagation(); POS.open(a.dataset.p, a.closest("tr")); });
+  $("requests").querySelectorAll("a[target]").forEach(a => a.onclick = e => e.stopPropagation());
+  $("requests").querySelectorAll("tr.req").forEach(tr => tr.onclick = () => {
+    const d = $("requests").querySelector(`tr[data-for-r="${tr.dataset.r}"]`);
+    d.hidden = !d.hidden; tr.classList.toggle("open", !d.hidden);
+  });
+})();
+
+// ---------- missing positions overlay ----------
+const POS = (function(){
+  let lastFocus = null;
+  const cls = v => v <= -3 ? "n2" : v < 0 ? "n1" : v > 0 ? "p1" : "z";
+  // place the box next to the clicked project (right, else left, else below); centred on small screens
+  function place(anchor){
+    const m = $("posModal"), box = m.querySelector(".modal-box");
+    const vw = innerWidth, vh = innerHeight;
+    box.style.left = box.style.top = "";
+    if (!anchor || vw < 700){ m.classList.remove("anchored"); return; }
+    m.classList.add("anchored");
+    const r = anchor.getBoundingClientRect(), bw = box.offsetWidth, bh = box.offsetHeight, g = 10;
+    let left, top;
+    if (r.right + g + bw <= vw - 8){ left = r.right + g; top = r.top; }
+    else if (r.left - g - bw >= 8){ left = r.left - g - bw; top = r.top; }
+    else { left = r.left; top = r.bottom + g; if (top + bh > vh - 8) top = r.top - g - bh; }
+    box.style.left = Math.max(8, Math.min(left, vw - bw - 8)) + "px";
+    box.style.top = Math.max(8, Math.min(top, vh - bh - 8)) + "px";
+  }
+  function open(name, anchor){
+    const p = D.projects.find(x => x.name === name);
+    if (!p || !p.staffing) return;
+    const rows = p.staffing.by_position.slice().sort((a,b) => Math.min(...a.balance) - Math.min(...b.balance));
+    const now = rows.filter(r => r.balance[0] < 0);
+    $("posTitle").textContent = `${name} · compared with the PM’s staffing plan`;
+    $("posNow").innerHTML = now.length
+      ? `<div class="v-small" style="margin-bottom:6px">This week (W${D.weeks[0]}) the plan still has empty places for:</div><div class="v-missing">${
+          now.map(r => `<span>${-r.balance[0]} × ${esc(r.position)}</span>`).join("")}</div>`
+      : `<p class="pill good" style="margin:4px 0 14px">✓ Every place in the plan is filled this week</p>`;
+    $("posTable").innerHTML = `<thead><tr><th>Position</th>${D.weeks.map((w,i)=>`<th class="num${i ? "" : " cur"}" title="Week starting ${shortDate(D.week_starts[i])}">W${w}${i ? "" : " · now"}</th>`).join("")}</tr></thead><tbody>${
+      rows.map(r => `<tr><td><b>${esc(r.position)}</b></td>${r.balance.map((v,i) =>
+        `<td class="c${i ? "" : " cur"}"><span class="cell ${cls(v)}" title="Planned ${r.required[i]}, ${v < 0 ? `${-v} fewer than planned` : v > 0 ? `${v} more than planned` : "as planned"}">${v < 0 ? v : v > 0 ? "+" + v : "✓"}</span></td>`).join("")}</tr>`).join("")}</tbody>`;
+    lastFocus = document.activeElement;
+    $("posModal").hidden = false; document.body.style.overflow = "hidden";
+    place(anchor);
+    $("posClose").focus();
+  }
+  function close(){
+    $("posModal").hidden = true; document.body.style.overflow = "";
+    if (lastFocus) lastFocus.focus();
+  }
+  $("posClose").onclick = close;
+  $("posModal").addEventListener("click", e => { if (e.target === $("posModal")) close(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("posModal").hidden) close(); });
+  return {open};
 })();
 
 // ---------- Visual skin ----------
@@ -543,10 +1060,16 @@ function renderVisual(){
   // 1. people today: one square per person
   const ST = [["Yes","On site","working at a client’s shipyard"],["Workshop","In our workshops","working in Lithuania"],
               ["Scheduled","Travelling soon","booked to leave for a project"],["Home","At home","resting between trips"],["Other","Other","no status in Ragic"]];
-  const color = {Yes:"var(--onsite)",Workshop:"var(--workshop)",Scheduled:"var(--scheduled)",Home:"var(--home)",Other:"var(--other)"};
-  const waffle = ST.map(([k,l]) => Array.from({length: ws[k] || 0}, () => `<i style="background:${color[k]}" title="${l}"></i>`).join("")).join("");
+  const color = {Yes:"var(--w-onsite)",Workshop:"var(--w-workshop)",Scheduled:"var(--w-scheduled)",Home:"var(--w-home)",Other:"var(--w-other)"};
+  // one square = UNIT people, so the picture stays small (about 100 squares)
+  const UNIT = total > 1500 ? 20 : total > 600 ? 10 : 5;
+  const waffle = ST.map(([k,l]) => {
+    const n = ws[k] ? Math.max(1, Math.round(ws[k] / UNIT)) : 0;
+    return Array.from({length: n}, () => `<i style="background:${color[k]}" title="${l}: ${ws[k]} people"></i>`).join("");
+  }).join("");
   const people = `<p class="v-hero"><b>${fmt(ws.Yes||0)}</b> of our <b>${fmt(total)}</b> people are working on a project site today.</p>
-    <div class="waffle" role="img" aria-label="One square per person, coloured by where they are">${waffle}</div>
+    <div class="v-small" style="margin-bottom:4px">■ 1 square = ${UNIT} people</div>
+    <div class="waffle" role="img" aria-label="One square per ${UNIT} people, coloured by where they are">${waffle}</div>
     <div class="v-legend">${ST.filter(([k]) => ws[k]).map(([k,l,t]) => `<div><span class="sw" style="background:${color[k]}"></span><div><b>${fmt(ws[k])}</b>${l}<br><span class="t">${t}</span></div></div>`).join("")}</div>`;
 
   // 2. project cards
@@ -555,20 +1078,21 @@ function renderVisual(){
     const s = p.staffing, st = p.status;
     const short = s ? s.short[0] : null;
     const pill = !s ? `<span class="pill none">– No staffing plan</span>`
-      : short < 0 ? `<span class="pill bad">✕ ${-short} ${-short === 1 ? "person" : "people"} missing</span>`
-      : `<span class="pill good">✓ Enough people</span>`;
+      : short < 0 ? `<button class="pill bad" data-p="${esc(p.name)}" title="Show which jobs are below the PM’s plan">✕ ${-short} below PM plan</button>`
+      : `<span class="pill good">✓ Matches PM plan</span>`;
     let need = "";
     if (s){
       // places filled = required minus the shortages per position (surplus in one job does not fill another)
       const req = s.required[0], filled = req + short, extra = req + s.balance[0] - filled;
       const pct = req ? filled / req * 100 : 100;
-      need = `<div><div class="meter" title="${filled} of ${req} places filled"><span style="width:${pct}%;background:${short < 0 ? "var(--neg)" : "var(--pos)"}"></span></div>
-        <div class="v-small" style="margin-top:4px">${filled} of ${req} places filled this week${extra > 0 ? ` · ${extra} extra people in other jobs` : ""}</div></div>`;
+      need = `<div><div class="meter" title="${filled} of ${req} planned places filled"><span style="width:${pct}%;background:${short < 0 ? "var(--neg-bg2)" : "var(--pos-bg2)"}"></span></div>
+        <div class="v-small" style="margin-top:4px">${filled} of ${req} places in the PM’s plan filled this week${extra > 0 ? ` · ${extra} more than planned in other jobs` : ""}</div></div>`;
     }
     const mixTot = mixKeys.reduce((a,k) => a + (st[k]||0), 0);
     const mix = mixTot ? `<div class="meter" title="${mixKeys.filter(k=>st[k]).map(k=>`${ST.find(x=>x[0]===k)[1]}: ${st[k]}`).join(", ")}">${
       mixKeys.filter(k=>st[k]).map(k=>`<span style="width:${st[k]/mixTot*100}%;background:${color[k]}"></span>`).join("")}</div>` : "";
-    const h = p.hours ? `<div class="v-small">🕒 <b style="color:var(--ink)">${fmt(p.hours.last7)} h</b> worked in the last 7 days</div>` : "";
+    const h = p.hours ? `<div class="v-small">🕒 <b style="color:var(--ink)">${fmt(p.hours.last30)} h</b> worked in the last 30 days</div>
+      <div class="v-small cst">💶 <b style="color:var(--ink)">${eur(p.hours.cost)}</b> labour cost so far <span class="faint">(estimate)</span></div>` : "";
     const na = WK.groups.includes(p.name) ? WK.alertsIn(p.name) : 0;
     const al = na ? `<button class="wkbtn has" data-g="${esc(p.name)}">⚠ ${na} worker${na>1?"s":""} to check</button>` : "";
     return card(`<div class="head"><span class="name">${esc(p.name)}</span>${p.country ? `<span class="badge">${esc(p.country)}</span>` : ""}</div>
@@ -578,16 +1102,16 @@ function renderVisual(){
   // 3. next 8 weeks
   const planned = real.filter(p => p.staffing);
   const weeksHead = `<div></div><div class="wk">${D.weeks.map((w,i)=>`<span>W${w}<br>${shortDate(D.week_starts[i])}</span>`).join("")}</div>`;
-  const dots = planned.map(p => `<div style="font-weight:650">${esc(p.name)}</div><div class="wk">${p.staffing.short.map((v,i) => {
+  const dots = planned.map(p => `<div class="pname" data-p="${esc(p.name)}" title="Show positions">${esc(p.name)} ›</div><div class="wk click" data-p="${esc(p.name)}">${p.staffing.short.map((v,i) => {
       const missing = p.staffing.by_position.filter(r => r.balance[i] < 0).map(r => `${r.position} ${r.balance[i]}`).join(", ");
       return v < 0 ? `<span class="dot ${v <= -3 ? "bad" : "bad2"}" title="Week ${D.weeks[i]}: ${-v} missing (${missing})">${v}</span>`
                    : `<span class="dot good" title="Week ${D.weeks[i]}: all positions filled">✓</span>`;
     }).join("")}</div>`).join("");
 
   // 4. hours
-  const hs = (D.hours || []).filter(g => g.last7 > 0).sort((a,b) => b.last7 - a.last7);
-  const hmax = Math.max(1, ...hs.map(g => g.last7));
-  const hbars = hs.map(g => `<div style="font-weight:650">${esc(g.name)}</div><div><div class="bar" style="width:${g.last7/hmax*100}%" title="${esc(g.name)}: ${fmt(g.last7)} h"></div></div><div class="val">${fmt(g.last7)} h</div>`).join("");
+  const hs = (D.hours || []).filter(g => g.last30 > 0).sort((a,b) => b.last30 - a.last30);
+  const hmax = Math.max(1, ...hs.map(g => g.last30));
+  const hbars = hs.map(g => `<div style="font-weight:650">${esc(g.name)}</div><div><div class="bar" style="width:${g.last30/hmax*100}%" title="${esc(g.name)}: ${fmt(g.last30)} h"></div></div><div class="val">${fmt(g.last30)} h<div class="v-small cst">${eur(g.cost30)}</div></div>`).join("");
   const posTot = {};
   (D.hours || []).forEach(g => Object.entries(g.positions).forEach(([k,v]) => posTot[k] = (posTot[k]||0) + v));
   let pos = Object.entries(posTot).sort((a,b) => b[1]-a[1]);
@@ -597,7 +1121,8 @@ function renderVisual(){
 
   // 5. alerts
   const fc = (D.workers || {}).flag_counts || {};
-  const AL = [["missing","🕒","workers are on site but have no hours booked for 2+ working days","Maybe hours were not entered – money we cannot bill."],
+  const AL = [["no_ts","🕒",`workers were on site but have no timesheet for last week (W${(D.workers||{}).last_week || ""})`,"Maybe hours were not entered – money we cannot bill. Yards that do not use Ragic timesheets are not checked."],
+              ["mismatch","📍","workers booked hours at another location than their project in Ragic","Either the worker moved or the HR card / timesheet is wrong."],
               ["over12","⏰","workers had days longer than 12 hours (last 4 weeks)","Dutch law allows max. 12 hours a day."],
               ["over60","📅","workers had weeks over 60 hours (last 16 weeks)","Dutch law allows max. 60 hours a week."],
               ["avg48","📈","workers average more than 48 hours a week (16 weeks)","The long-term legal average is 48 hours."]];
@@ -606,32 +1131,102 @@ function renderVisual(){
 
   // 6. requests
   const rq = D.requests.filter(r => r.week >= D.week || r.gap > 0);
-  const reqs = rq.map(r => `<div><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(r.project)}</b><span class="badge">week ${r.week}</span></div>
-      <div>${r.requested} × ${esc(r.position)}</div>
-      <div class="meter" title="${r.filled} of ${r.requested} found"><span style="width:${r.requested ? r.filled/r.requested*100 : 0}%;background:${r.gap ? "var(--scheduled)" : "var(--pos)"}"></span></div>
-      <div class="v-small">${r.gap ? `${r.filled} of ${r.requested} found · <b style="color:var(--neg)">${r.gap} still missing</b>` : `✓ all ${r.requested} found`}</div></div>`).join("");
+  const reqs = rq.map(r => { const [cls, word] = REQ_STATUS[r.status] || ["z", r.status];
+    return `<div><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(r.project)}</b><span class="badge">week ${r.week}</span></div>
+      <div>${r.requested} × ${esc(r.position)} <span class="bal ${cls}">${word}</span></div>
+      <div class="meter" title="${r.reserved} of ${r.requested} found"><span style="width:${r.requested ? Math.min(1, r.reserved/r.requested)*100 : 0}%;background:${r.gap ? "var(--neg-bg2)" : "var(--pos-bg2)"}"></span></div>
+      <div class="v-small">${r.gap ? `${r.reserved} of ${r.requested} found · <b style="color:var(--neg)">${r.gap} still needed</b>` : `✓ all ${r.requested} found`} · ${r.confirmed} confirmed · ${r.working} working${r.changed ? ` · <b style="color:var(--neg)">${r.changed} not planned in rotation</b>` : ""}
+        · <a class="code" href="${esc(r.url)}" target="_blank" rel="noopener">Ragic ↗</a></div></div>`; }).join("");
 
+  const planNote = `<div class="plan-note"><span class="i">ⓘ</span><div>“Below plan” is measured against the <b>project manager’s staffing plan</b> in Ragic (how many people each job should have).
+    It is <b>not</b> an official request for new people – real requests are listed in <b>“Extra people asked for”</b> further down.</div></div>`;
   $("visual").innerHTML =
-    sec("👷 Where are our people today?", "Every square is one person. The colour shows where they are right now.", people) +
-    sec("🏗️ Our projects right now", "Big number = people working there today. Green = enough people, red = some positions are still empty.", `<div class="v-cards">${cards}</div>`) +
-    sec("📆 Do we have enough people in the coming weeks?", "Each circle is one week. ✓ = every position filled. A red number = how many people are missing that week (darker red = 3 or more). Hover a circle to see which jobs.",
-        planned.length ? `<div class="v-scroll"><div class="v-dots">${weeksHead}${dots}</div></div>` : `<p class="muted">No staffing plans yet.</p>`) +
+    sec("👷 Where are our people today?", "Every square is a small group of people. The colour shows where they are right now.", people) +
+    sec("🏗️ Our projects right now", "Big number = people working there today. Green = staffed as the project manager planned, red = fewer people than planned in some jobs.",
+        planNote + `<div class="v-cards">${cards}</div>`) +
+    sec("📆 People vs. the PM’s plan – coming weeks", "Each circle is one week. ✓ = every job staffed as planned. A red number = how many people fewer than planned that week (darker red = 3 or more). Click a project to see the jobs.",
+        planNote + (planned.length ? `<div class="v-scroll"><div class="v-dots">${weeksHead}${dots}</div></div>` : `<p class="muted">No staffing plans yet.</p>`)) +
     `<div class="grid two" style="margin-top:0">` +
-      sec("🕒 Work done in the last 7 days", "Hours written in the task lists. Longer bar = more work.", hs.length ? `<div class="v-hbar">${hbars}</div>` : `<p class="muted">No hours this week.</p>`) +
+      sec("🕒 Work done in the last 30 days", "Hours written in the task lists. Longer bar = more work.", hs.length ? `<div class="v-hbar">${hbars}</div>` : `<p class="muted">No hours in the last 30 days.</p>`) +
       sec("🛠️ Which jobs do the work?", "Share of all hours since the projects started, by job.", pos.length ? `<div class="v-hbar">${pbars}</div>` : `<p class="muted">No hours yet.</p>`) +
     `</div>` +
     sec("🔎 Things to check", "Click “See who” to get the list. The codes open the worker’s card in Ragic.", `<div class="v-alerts">${alerts}</div>`) +
     sec("🙋 Extra people asked for", "Requests from project managers. The bar shows how many people we already found.", rq.length ? `<div class="v-req">${reqs}</div>` : `<p class="muted">No open requests.</p>`);
 
   $("visual").querySelectorAll(".wkbtn[data-g]").forEach(b => b.onclick = () => WK.open(b.dataset.g));
+  $("visual").querySelectorAll("[data-p]").forEach(b => b.onclick = () => POS.open(b.dataset.p, b.closest(".v-card") || b));
   $("visual").querySelectorAll(".wkbtn[data-f]").forEach(b => b.onclick = () => WK.open(null, b.dataset.f));
 }
+
+// ---------- PDF of one section: copy the card (as it is open now) into a print area and print it ----------
+function addPdfButtons(root){
+  root.querySelectorAll(".card > h2, .card > .v-title").forEach(h => {
+    if (h.querySelector(".pdfbtn")) return;
+    const b = document.createElement("button");
+    b.className = "pdfbtn"; b.textContent = "PDF"; b.title = "Print or save this section as PDF";
+    b.onclick = e => { e.stopPropagation(); printCard(h.closest(".card")); };
+    h.appendChild(b);
+  });
+}
+function printCard(card){
+  const logo = document.querySelector(".logo.l").src;
+  $("printArea").innerHTML = `<div class="ph"><img src="${logo}" alt=""><div><b>Daily Overview</b><div class="sub">Week ${D.week} · ${dateTxt(D.date)}</div></div></div>`;
+  $("printArea").appendChild(card.cloneNode(true));
+  document.body.classList.add("print-one");
+  const done = () => { document.body.classList.remove("print-one"); $("printArea").innerHTML = ""; removeEventListener("afterprint", done); };
+  addEventListener("afterprint", done);
+  print();
+}
+
+// ---------- attention required: the few things that need a decision, most urgent first (max 6) ----------
+(function(){
+  const items = [];   // [score, icon, title, why, action, kind]
+  const nextWeek = D.week + 1;
+  D.requests.forEach((r, i) => {
+    if (r.gap > 0 && r.week <= nextWeek)
+      items.push([20 + r.gap + (r.week < D.week ? 5 : 0), "🙋", `${r.project}: ${r.gap} × ${r.position} still needed`,
+        r.week < D.week ? `Manpower request for W${r.week} is overdue` : `Needed in W${r.week}${r.week === D.week ? " (this week)" : " (next week)"} · ${r.reserved} of ${r.requested} reserved`, () => goReq(i), "req"]);
+  });
+  const rot = D.requests.map((r, i) => [r, i]).filter(([r]) => r.changed > 0 && r.week >= D.week);
+  if (rot.length){
+    const n = rot.reduce((s, [r]) => s + r.changed, 0);
+    items.push([15 + n, "🔄", `${n} selected ${n > 1 ? "people are" : "person is"} not planned in Human Rotation`,
+      [...new Set(rot.map(([r]) => `${r.project} W${r.week}`))].join(", ") + " – rotation changed by hand or not planned yet", () => goReq(rot[0][1]), "rot"]);
+  }
+  D.projects.filter(p => !p.internal && p.staffing && p.staffing.short[0] < 0).forEach(p =>
+    items.push([8 + -p.staffing.short[0], "📉", `${p.name}: ${-p.staffing.short[0]} people below the PM’s plan this week`,
+      p.staffing.by_position.filter(r => r.balance[0] < 0).map(r => `${-r.balance[0]} × ${r.position}`).join(", "), el => POS.open(p.name, el), "plan"]));
+  const fc = (D.workers || {}).flag_counts || {};
+  if (fc.no_ts) items.push([10 + fc.no_ts / 10, "🕒", `${fc.no_ts} workers on site without a timesheet for W${D.workers.last_week}`, "Hours may be missing – cannot be billed", () => WK.open(null, "no_ts"), "wk"]);
+  if (fc.over60) items.push([9 + fc.over60 / 10, "📅", `${fc.over60} workers had weeks over 60 hours`, "Dutch law: max. 60 h a week (last 16 weeks)", () => WK.open(null, "over60"), "wk"]);
+  if (fc.mismatch) items.push([7 + fc.mismatch / 10, "📍", `${fc.mismatch} workers booked hours at another location`, "HR card or timesheet may be wrong", () => WK.open(null, "mismatch"), "wk"]);
+  if (D.workforce.unassigned) items.push([6, "🏠", `${D.workforce.unassigned} active people at home without a project`, "Available to assign", null, "home"]);
+  items.sort((a, b) => b[0] - a[0]);
+  // keep the list varied: at most 2 requests, 1 staffing plan item and 2 worker alerts
+  const cap = {req: 2, rot: 1, plan: 1, wk: 2, home: 1}, used = {}, top = [];
+  for (const it of items){
+    if (top.length === 6) break;
+    if ((used[it[5]] || 0) < cap[it[5]]){ top.push(it); used[it[5]] = (used[it[5]] || 0) + 1; }
+  }
+  if (!top.length) return;
+  $("attn").hidden = false;
+  $("attn").innerHTML = `<h2>⚠ Attention required</h2><p class="hint" style="margin:0">The most urgent points from all sections below. Click one for details.</p>
+    <ul>${top.map(([s, ico, t, w], i) => `<li data-i="${i}" class="${s >= 15 ? "hi" : ""}"><span class="ico">${ico}</span><div><div class="t">${esc(t)}</div><div class="w">${esc(w)}</div></div></li>`).join("")}</ul>`;
+  $("attn").querySelectorAll("li").forEach(li => li.onclick = () => { const a = top[li.dataset.i][4]; if (a) a(li); });
+  function goReq(i){
+    if ($("classic").hidden){ document.querySelector(".v-req")?.scrollIntoView({behavior:"smooth", block:"center"}); return; }
+    const tr = $("requests").querySelector(`tr.req[data-r="${i}"]`);
+    if (!tr) return;
+    if (!tr.classList.contains("open")) tr.click();
+    tr.scrollIntoView({behavior:"smooth", block:"center"});
+  }
+})();
 
 (function(){
   let rendered = false;
   const set = skin => {
     const visual = skin === "visual";
-    if (visual && !rendered){ renderVisual(); rendered = true; }
+    if (visual && !rendered){ renderVisual(); addPdfButtons($("visual")); rendered = true; }
     $("visual").hidden = !visual; $("classic").hidden = visual;
     $("skin").textContent = visual ? "Skin: Visual" : "Skin: Classic";
     $("skin").setAttribute("aria-pressed", String(visual));
@@ -643,7 +1238,18 @@ function renderVisual(){
   $("skin").onclick = () => set($("visual").hidden ? "visual" : "classic");
 })();
 
-$("foot").textContent =`Source: Ragic (SIDC10000) · aggregated daily, no personal data · snapshot ${D.date}`;
+addPdfButtons($("classic"));
+$("foot").textContent =`Source: Ragic (SIDC10000) · aggregated daily · names only in manpower request details · snapshot ${D.date}`;
+// language switch + translation of everything rendered now and later (tables, overlays, visual skin)
+$("lang").textContent = LANG === "lt" ? "EN" : "LT";
+$("lang").onclick = () => { try { localStorage.setItem("lang", LANG === "lt" ? "en" : "lt"); } catch(e){} location.reload(); };
+if (LANG === "lt"){
+  document.documentElement.lang = "lt";
+  translate(document.body);
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n =>
+    n.nodeType === 1 ? translate(n) : n.nodeType === 3 && n.parentElement && translate(n.parentElement))))
+    .observe(document.body, {childList: true, subtree: true});
+}
 </script>
 </body>
 </html>
