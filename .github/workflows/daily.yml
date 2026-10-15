@@ -23,6 +23,7 @@ jobs:
     env:
       RAGIC_API_KEY: ${{ secrets.RAGIC_API_KEY }}
       PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD }}
+      MGMT_PASSWORD: ${{ secrets.MGMT_PASSWORD }}   # second password: labour cost only in management mode
       RAGIC_BASE: ${{ vars.RAGIC_BASE || 'https://www.ragic.com' }}
       RAGIC_ACCOUNT: SIDC10000
     steps:
