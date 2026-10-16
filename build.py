@@ -441,6 +441,66 @@ def aggregate_hours(rows, today, names, labour=None):
     return {"groups": out, "by_name": by_name, **figs(T)}
 
 
+PROJECT_CODE = re.compile(r"^[A-Z]{2}-[A-Z0-9]+-\d+$")   # real projects (NL-SPG-716); other names are yards / workshops
+
+
+def make_staffing(by_pos, n):
+    """Totals over positions: required, net balance and shortage (a surplus in one job does not fill another)."""
+    if not by_pos:
+        return None
+    by_pos.sort(key=lambda x: -max(x["required"] or [0]))
+    return {"required": [sum(p["required"][i] for p in by_pos) for i in range(n)],
+            "balance": [sum(p["balance"][i] for p in by_pos) for i in range(n)],
+            "short": [sum(min(0, p["balance"][i]) for p in by_pos) for i in range(n)],
+            "by_position": by_pos}
+
+
+def group_by_yard(projects, names, hours_by_name, n_weeks):
+    """One row per yard: HR books people on the yard (SPG), not on its projects (NL-SPG-716, NL-SPG-758),
+    so the projects are shown inside their yard - the same grouping as the hours table."""
+    groups = defaultdict(list)
+    for p in projects:
+        groups[site_of(p["name"], names)].append(p)
+    out = []
+    for site, members in groups.items():
+        head = next((p for p in members if p["name"] == site), None)
+        kids = [p for p in members if p["name"] != site]
+        if not kids:
+            out.append(head)
+            continue
+        parts = ([head] if head else []) + kids
+        status = Counter()
+        pos_on = Counter()
+        plan = {}
+        for p in parts:
+            status.update(p["status"])
+            pos_on.update(p["positions_onsite"])
+            for row in (p["staffing"] or {}).get("by_position", []):
+                acc = plan.setdefault(row["position"], {"position": row["position"],
+                                                       "required": [0] * n_weeks, "balance": [0] * n_weeks})
+                for i in range(n_weeks):
+                    acc["required"][i] += row["required"][i]
+                    acc["balance"][i] += row["balance"][i]
+        starts = [p["start"] for p in parts if p["start"]]
+        ends = [p["end"] for p in parts if p["end"]]
+        out.append({
+            "name": site,
+            "country": (head or {}).get("country") or next((k["country"] for k in kids if k["country"]), ""),
+            "start": min(starts) if starts else "", "end": max(ends) if ends else "",
+            "used_hours": sum(p["used_hours"] for p in parts),
+            "internal": all(p["internal"] for p in parts),
+            "status": dict(status), "onsite": status.get("Yes", 0), "active": sum(status.values()),
+            "positions_onsite": dict(pos_on.most_common()),
+            "staffing": make_staffing(list(plan.values()), n_weeks),
+            "not_in_project_list": all(p.get("not_in_project_list") for p in parts),
+            "children": [{"name": k["name"], "start": k["start"], "end": k["end"],
+                          "in_ragic_list": not k.get("not_in_project_list"),
+                          "people": k["active"], "hours": hours_by_name.get(k["name"]),
+                          "has_plan": bool(k["staffing"])} for k in sorted(kids, key=lambda k: k["name"])],
+        })
+    return out
+
+
 def build_snapshot(raw, today):
     year, week, _ = today.isocalendar()
     weeks = [w for w in range(week, week + HORIZON) if w <= 52]
@@ -487,14 +547,7 @@ def build_snapshot(raw, today):
             bal = [avail52[w - 1] - req52[w - 1] for w in weeks]
             if any(req) or any(bal):
                 by_pos.append({"position": pos, "required": req, "balance": bal})
-        if by_pos:
-            by_pos.sort(key=lambda x: -max(x["required"] or [0]))
-            staffing = {
-                "required": [sum(p["required"][i] for p in by_pos) for i in range(len(weeks))],
-                "balance": [sum(p["balance"][i] for p in by_pos) for i in range(len(weeks))],
-                "short": [sum(min(0, p["balance"][i]) for p in by_pos) for i in range(len(weeks))],
-                "by_position": by_pos,
-            }
+        staffing = make_staffing(by_pos, len(weeks))
         status = dict(by_project.get(name, Counter()))
         projects.append({
             "name": name,
@@ -503,6 +556,7 @@ def build_snapshot(raw, today):
             "end": ragic_date(r.get("End date")),
             "used_hours": round(num(r.get("Used hours"))),
             "internal": name in INTERNAL,
+            "workshop": name in INTERNAL_TIMESHEETS,   # own workshops in Lithuania, shown below the projects
             "status": status,
             "onsite": status.get("Yes", 0),
             "active": sum(status.values()),
@@ -516,16 +570,22 @@ def build_snapshot(raw, today):
                              "internal": True, "status": dict(st), "onsite": st.get("Yes", 0),
                              "active": sum(st.values()), "positions_onsite": dict(pos_onsite.get(name, Counter())),
                              "staffing": None, "not_in_project_list": True, "unassigned": name == UNASSIGNED})
-    projects.sort(key=lambda p: (p["internal"], -p["onsite"], -p["active"], p["name"]))
-
     labour = LabourCost(raw, projects)
-    names = {p["name"] for p in projects}
     rows = raw.get("hours") or []
+    # yard names: projects / HR assignments, plus yards that only appear in timesheets (e.g. LEA, no longer
+    # active in Ragic) so that NL-LEA-01 is grouped into LEA everywhere
+    names = {p["name"] for p in projects} | {(r[0] or "").strip() for r in rows
+                                             if r and r[0] and not PROJECT_CODE.match((r[0] or "").strip())}
+    names.discard("")
     ts = timesheet_index(rows, today, names)
     hours = aggregate_hours(rows, today, names, labour)
     workers = aggregate_workers(people, rows, today, ts, names)
     for w in workers["workers"]:
         w["group"] = site_of(w["project"], names)  # same yard grouping as the hours table
+    projects = group_by_yard(projects, names, hours["by_name"], len(weeks))
+    projects.sort(key=lambda p: (p["internal"], bool(p.get("workshop")), -p["onsite"], -p["active"], p["name"]))
+    project_codes = sorted({(r.get("Project") or "").strip() for r in raw["projects"]
+                            if (r.get("Active") or "Yes") == "Yes" and PROJECT_CODE.match((r.get("Project") or "").strip())})
     for p in projects:
         g = hours["by_name"].get(p["name"])
         p["hours"] = g  # {"total", "last30"} for a site (incl. its sub-projects) or a single project
@@ -611,6 +671,7 @@ def build_snapshot(raw, today):
         "year": year, "week": week, "weeks": weeks,
         "week_starts": [dt.date.fromisocalendar(year, w, 1).isoformat() for w in weeks],
         "projects": projects,
+        "project_codes": project_codes,
         "unassigned_key": UNASSIGNED,
         "workforce": {"total": sum(status_total.values()), "status": dict(status_total), "own": own, "sub": sub,
                       "unassigned": sum(by_project.get(UNASSIGNED, Counter()).values()),
@@ -653,12 +714,21 @@ def diff(prev, cur):
 
     pp = {p["name"]: p for p in prev["projects"]}
     cp = {p["name"]: p for p in cur["projects"]}
-    for name in cp:
-        if name not in pp and not cp[name].get("not_in_project_list"):
+    # project codes inside yards count too (older snapshots listed them as separate rows)
+    every = lambda snap: {p["name"] for p in snap["projects"]} | {c["name"] for p in snap["projects"] for c in p.get("children", [])}
+    p_all, c_all = every(prev), every(cur)
+    if prev.get("project_codes") is not None:
+        for name in sorted(set(cur["project_codes"]) - set(prev["project_codes"])):
             add("project", f"New active project: {name}", 1)
-    for name in pp:
-        if name not in cp and not pp[name].get("not_in_project_list"):
+        for name in sorted(set(prev["project_codes"]) - set(cur["project_codes"])):
             add("project", f"Project no longer active: {name}", -1)
+    else:
+        for name in cp:
+            if name not in p_all and not cp[name].get("not_in_project_list"):
+                add("project", f"New active project: {name}", 1)
+        for name in pp:
+            if name not in c_all and not pp[name].get("not_in_project_list"):
+                add("project", f"Project no longer active: {name}", -1)
     for name, p in cp.items():
         q = pp.get(name)
         if not q:
@@ -727,6 +797,12 @@ def main():
     page = dict(snap)
     page["changes"] = diff(prev, snap)
     page["trend"] = trend(history, snap)
+    # "Attention required" points hidden with the bin (IDs only; kept in hidden.txt by worker/bin-worker.js).
+    # The page reads the live list on load; this copy only avoids a flash of hidden points.
+    hfile = Path(__file__).parent / "hidden.txt"
+    page["hidden"] = [s.strip() for s in hfile.read_text(encoding="utf-8").splitlines() if s.strip()] if hfile.exists() else []
+    page["bin_url"] = os.environ.get("BIN_URL", "")
+    page["hidden_raw_url"] = f"https://raw.githubusercontent.com/{os.environ.get('GITHUB_REPOSITORY', 'VytTech/sidc-dashboard')}/main/hidden.txt"
     if os.environ.get("MGMT_PASSWORD"):
         page, costs = split_costs(page)
         page["costs_enc"] = encrypt_costs(costs, os.environ["MGMT_PASSWORD"])

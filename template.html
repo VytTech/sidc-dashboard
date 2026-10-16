@@ -69,20 +69,30 @@ th,td{padding:8px 8px;text-align:left;border-bottom:1px solid var(--line);white-
 th{font-size:12px;color:var(--muted);font-weight:600;background:var(--card);position:sticky;top:0;white-space:normal;vertical-align:bottom}
 td.wrapcell{white-space:normal;min-width:120px}
 /* no horizontal scrolling: less important columns step out on narrower screens */
-@media (max-width:1100px){#hours tr:not(.detail)>:nth-child(7){display:none}}
+@media (max-width:1100px){#hours>*>tr:not(.detail)>:nth-child(7){display:none}}
 @media (max-width:1000px){
-  #projects tr:not(.detail)>:is(:nth-child(5),:nth-child(6),:nth-child(9)),
-  #hours tr:not(.detail)>:nth-child(6),
-  #requests tr:not(.detail)>:is(:nth-child(6),:nth-child(7)){display:none}}
+  #projects>*>tr:not(.detail)>:is(:nth-child(5),:nth-child(6),:nth-child(9)),
+  #hours>*>tr:not(.detail)>:nth-child(6),
+  #requests>*>tr:not(.detail)>:is(:nth-child(6),:nth-child(7)){display:none}}
 @media (max-width:760px){
-  #projects tr:not(.detail)>:is(:nth-child(2),:nth-child(4),:nth-child(7),:nth-child(11)),
-  #hours tr:not(.detail)>:is(:nth-child(3),:nth-child(5)),
-  #requests tr:not(.detail)>:is(:nth-child(5),:nth-child(10)){display:none}}
-@media (max-width:480px){#requests tr:not(.detail)>:nth-child(3),.plan .w2{display:none}
+  #projects>*>tr:not(.detail)>:is(:nth-child(2),:nth-child(4),:nth-child(7),:nth-child(11)),
+  #hours>*>tr:not(.detail)>:is(:nth-child(3),:nth-child(5)),
+  #requests>*>tr:not(.detail)>:is(:nth-child(5),:nth-child(10)){display:none}}
+@media (max-width:480px){#requests>*>tr:not(.detail)>:nth-child(3),.plan .w2{display:none}
   #projects td,#requests td,#hours td{white-space:normal}
   th,td{padding:7px 5px}}
 html.nocost .cst{display:none !important}
 html.nocost .bars .row.cost{grid-template-columns:130px 1fr 64px}
+tr.totrow td{border-top:2px solid var(--ink);border-bottom:0;background:var(--soft)}
+input.inc{accent-color:var(--accent);vertical-align:-2px;margin:0 4px 0 0;cursor:pointer}
+.binbtn{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:7px;padding:2px 7px;font:inherit;font-size:13px;cursor:pointer;flex:none;align-self:center}
+.binbtn:hover{border-color:var(--neg);color:var(--neg)}
+.binbox{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px;opacity:.75}
+.kidnames{font-size:11.5px;color:var(--muted);font-weight:400;margin:1px 0 0 14px;white-space:normal}
+.warnchip{display:inline-block;background:color-mix(in srgb,var(--scheduled) 22%,transparent);color:var(--scheduled);border:1px solid var(--scheduled);border-radius:6px;padding:1px 7px;font-weight:700;font-size:12px}
+.warnbox{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--scheduled);background:color-mix(in srgb,var(--scheduled) 14%,var(--card));border-radius:10px;padding:10px 14px;margin:6px 0 12px;font-size:13.5px;color:var(--ink)}
+.warnbox .i{font-size:20px;line-height:1.1}
+table.kids{margin:0 0 2px}
 .cty{color:var(--faint);font-weight:400;font-size:12px;margin-left:6px}
 td.num,th.num{text-align:right}
 tbody tr.proj{cursor:pointer}
@@ -322,6 +332,7 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
   <section class="card">
     <h2>Hours booked</h2>
     <p class="hint" id="hoursHint"></p>
+    <div id="hoursWarn"></div>
     <div class="tablewrap"><table id="hours"></table></div>
   </section>
 
@@ -355,6 +366,19 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
   <footer id="foot"></footer>
 </div>
 <div id="printArea"></div>
+
+<div class="modal" id="binModal" hidden role="dialog" aria-modal="true" aria-labelledby="binTitle">
+  <form class="modal-box compact" id="binForm" style="max-width:380px;margin-top:12vh">
+    <div class="modal-head">
+      <h2 id="binTitle">Bin password</h2>
+      <button type="button" class="toggle" id="binClose" aria-label="Close">✕</button>
+    </div>
+    <p class="hint">Hiding or showing a point changes the list for everybody, so it needs the bin password. It is remembered in this browser tab.</p>
+    <input type="password" id="binPw" autocomplete="off" placeholder="Bin password" aria-label="Bin password"
+      style="width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 10px;font:inherit">
+    <div style="margin-top:10px"><button type="submit" class="wkbtn">OK</button></div>
+  </form>
+</div>
 
 <div class="modal" id="mgmtModal" hidden role="dialog" aria-modal="true" aria-labelledby="mgmtTitle">
   <form class="modal-box compact" id="mgmtForm" style="max-width:380px;margin-top:12vh">
@@ -411,7 +435,7 @@ const LOC = {lt: "lt-LT", ru: "ru-RU"}[LANG] || "en-GB";
 const LT_RULES = [   // patterns with numbers first
   [/in (\d+) manpower request\(s\)/g, "$1 užklausose"], [/\((\d+) wk left\)/g, "(liko $1 sav.)"],
   [/(\d+) alerts? · /g, "$1 įsp. · "], [/(\d+) workers? to check/g, "$1 darb. patikrinti"],
-  [/(\d+) of (\d+) worker\(s\) shown\./g, "Rodoma $1 iš $2 darb."],
+  [/(\d+) of (\d+) worker\(s\) shown\./g, "Rodoma $1 iš $2 darb."], [/\((\d+) of (\d+) ticked\)/g, "(pažymėta $1 iš $2)"],
   [/currently (\d+) days? of history: /g, "dabar istorijos dienų: $1; "], [/(\d+) hours ago/g, "prieš $1 val."], [/(\d+) days ago/g, "prieš $1 d."],
 ];
 const LT = {
@@ -534,11 +558,16 @@ const LT = {
   "found":"rasta", "✓ all":"✓ visi", "confirmed":"patvirtinta", "working":"dirba", "not planned in rotation":"nesuplanuota rotacijoje", "No open requests.":"Atvirų užklausų nėra.", "week":"savaitė",
   // footer
   "Source:":"Šaltinis:", "aggregated daily":"atnaujinama kasdien", "names only in manpower request details":"vardai tik užklausų detalėse", "snapshot":"duomenys",
+  "Projects at":"Projektai vietoje", "Bin password":"Šiukšlinės slaptažodis", "Hiding or showing a point changes the list for everybody, so it needs the bin password. It is remembered in this browser tab.":"Paslėptas ar grąžintas punktas keičia sąrašą visiems, todėl reikia šiukšlinės slaptažodžio. Jis įsimenamas šioje naršyklės kortelėje.", "Hide for everybody":"Paslėpti visiems", "Show again for everybody":"Vėl rodyti visiems", "Hidden points":"Paslėpti punktai", "Saving…":"Saugoma…", "Hidden for everybody.":"Paslėpta visiems.", "Shown again for everybody.":"Vėl rodoma visiems.", "Could not save":"Nepavyko išsaugoti", "Try again later.":"Bandykite vėliau.", "Put in the bin":"Į šiukšlinę", "Restore":"Atstatyti", "Nothing urgent left.":"Skubių dalykų neliko.", "(not active in Ragic)":"(Ragic neaktyvus)", "People are registered on the yard in HR, so the headcount is shown for":"HR žmonės priskirti vietai, todėl žmonių skaičius rodomas visai vietai", "as a whole.":".",
+  "Our workshops (Lithuania)":"Mūsų cechai (Lietuva)", "yards and workshops not counted":"vietos ir cechai neskaičiuojami",
+  "These projects have people on site but do not book timesheets in Ragic, so they have no hours, cost or worker alerts here.":"Šiuose projektuose dirba žmonės, bet darbo laikas Ragic nepildomas, todėl čia nėra jų valandų, kaštų ir darbuotojų įspėjimų.",
+  "First – last entry":"Pirmas – paskutinis įrašas", "Include in the total below":"Įtraukti į sumą apačioje", "Untick or tick a project to change the total.":"Pažymėkite arba atžymėkite projektą, kad pakeistumėte sumą.",
+  "All projects included – untick a project to leave it out of the total.":"Įtraukti visi projektai – atžymėkite projektą, kad jo nebūtų sumoje.",
 };
 const RU_RULES = [
   [/in (\d+) manpower request\(s\)/g, "в $1 заявках"], [/\((\d+) wk left\)/g, "(осталось $1 нед.)"],
   [/(\d+) alerts? · /g, "$1 предупр. · "], [/(\d+) workers? to check/g, "$1 раб. проверить"],
-  [/(\d+) of (\d+) worker\(s\) shown\./g, "Показано $1 из $2 раб."],
+  [/(\d+) of (\d+) worker\(s\) shown\./g, "Показано $1 из $2 раб."], [/\((\d+) of (\d+) ticked\)/g, "(отмечено $1 из $2)"],
   [/currently (\d+) days? of history: /g, "сейчас дней истории: $1; "], [/(\d+) hours ago/g, "$1 ч. назад"], [/(\d+) days ago/g, "$1 дн. назад"],
 ];
 const RU = {
@@ -661,6 +690,11 @@ const RU = {
   "found":"найдено", "✓ all":"✓ все", "confirmed":"подтверждено", "working":"работают", "not planned in rotation":"не запланированы в ротации", "No open requests.":"Открытых заявок нет.", "week":"неделя",
   // footer
   "Source:":"Источник:", "aggregated daily":"обновляется ежедневно", "names only in manpower request details":"имена только в деталях заявок", "snapshot":"данные",
+  "Projects at":"Проекты на", "Bin password":"Пароль корзины", "Hiding or showing a point changes the list for everybody, so it needs the bin password. It is remembered in this browser tab.":"Скрытие или возврат пункта меняет список для всех, поэтому нужен пароль корзины. Он запоминается в этой вкладке.", "Hide for everybody":"Скрыть для всех", "Show again for everybody":"Снова показать всем", "Hidden points":"Скрытые пункты", "Saving…":"Сохранение…", "Hidden for everybody.":"Скрыто для всех.", "Shown again for everybody.":"Снова показано всем.", "Could not save":"Не удалось сохранить", "Try again later.":"Попробуйте позже.", "Put in the bin":"В корзину", "Restore":"Восстановить", "Nothing urgent left.":"Срочного ничего не осталось.", "(not active in Ragic)":"(не активен в Ragic)", "People are registered on the yard in HR, so the headcount is shown for":"В HR люди закреплены за верфью, поэтому численность показана для", "as a whole.":"в целом.",
+  "Our workshops (Lithuania)":"Наши цеха (Литва)", "yards and workshops not counted":"верфи и цеха не считаются",
+  "These projects have people on site but do not book timesheets in Ragic, so they have no hours, cost or worker alerts here.":"На этих проектах работают люди, но табель в Ragic не ведётся, поэтому здесь нет их часов, затрат и предупреждений.",
+  "First – last entry":"Первая – последняя запись", "Include in the total below":"Включить в итог ниже", "Untick or tick a project to change the total.":"Отметьте или снимите отметку с проекта, чтобы изменить итог.",
+  "All projects included – untick a project to leave it out of the total.":"Включены все проекты – снимите отметку, чтобы исключить проект из итога.",
 };
 const TR_DICT = LANG === "lt" ? LT : LANG === "ru" ? RU : null;
 const TR_RULES = LANG === "lt" ? LT_RULES : LANG === "ru" ? RU_RULES : [];
@@ -745,8 +779,11 @@ const eurFull = n => "€" + fmt(Math.round(n || 0));
 const STATUS = [
   ["Yes","On site","var(--onsite)"], ["Workshop","Workshop","var(--workshop)"],
   ["Scheduled","Scheduled to travel","var(--scheduled)"], ["Home","At home","var(--home)"], ["Other","Other","var(--other)"]];
-const dateTxt = iso => iso ? new Date(iso + "T00:00:00").toLocaleDateString(LOC, {day:"numeric", month:"short", year:"numeric"}) : "";
-const shortDate = iso => iso ? new Date(iso + "T00:00:00").toLocaleDateString(LOC, {day:"numeric", month:"short"}) : "";
+// LT: "2026 spl 15 d." (lt-LT in the browser gives numeric months)
+const LT_MON = ["sau","vas","kov","bal","geg","bir","lie","rgp","rgs","spl","lap","grd"];
+const ltDate = (iso, year) => { const [y, m, d] = iso.split("-").map(Number); return `${year ? y + " " : ""}${LT_MON[m - 1]} ${d} d.`; };
+const dateTxt = iso => !iso ? "" : LANG === "lt" ? ltDate(iso, true) : new Date(iso + "T00:00:00").toLocaleDateString(LOC, {day:"numeric", month:"short", year:"numeric"});
+const shortDate = iso => !iso ? "" : LANG === "lt" ? ltDate(iso, false) : new Date(iso + "T00:00:00").toLocaleDateString(LOC, {day:"numeric", month:"short"});
 const balCls = v => v < 0 ? "n" : v > 0 ? "p" : "z";
 const sign = v => v > 0 ? "+" + v : String(v);
 
@@ -797,7 +834,7 @@ if (ageH > 36){
 
 // ---------- KPIs ----------
 const prevT = D.trend.length > 1 ? D.trend[D.trend.length - 2] : null;
-const real = D.projects.filter(p => !p.internal);
+const real = D.projects.filter(p => !p.internal && !p.workshop);
 const shortNow = real.reduce((s,p) => s + (p.staffing ? p.staffing.short[0] : 0), 0);
 const openReq = D.requests.filter(r => r.gap > 0 && r.week >= D.week);
 const ws = D.workforce.status;
@@ -808,7 +845,7 @@ const kpis = [
   ["At home (rotation)", ws.Home || 0, "var(--home)", null, D.workforce.unassigned ? `incl. ${D.workforce.unassigned} without a project` : ""],
   ["Unassigned resources", D.workforce.unassigned || 0, "var(--accent)", null, "active · at home · no project"],
   ["Active workforce", D.workforce.total, null, prevT ? D.workforce.total - prevT.active : null],
-  ["Active projects", real.length, null],
+  ["Active projects", (D.project_codes || []).length || real.length, null, null, "yards and workshops not counted"],
   ["Below PM plan · W" + D.week, -shortNow, "var(--neg)", null, "vs. staffing plan, not requests"],
   ["People still needed", openReq.reduce((s,r)=>s+r.gap,0), null, null, `in ${openReq.length} manpower request(s)`],
   ["Hours booked · last 30 days", D.hours_last30 || 0, null, null, `${fmt(D.hours_total)} h since start`],
@@ -903,27 +940,34 @@ function detail(p){
   const pos = Object.entries(p.positions_onsite);
   const left = pos.length ? `<div class="onsite-list"><span class="muted" style="background:none;padding:0">On site now:</span>${
       pos.map(([k,v])=>`<span>${esc(k)}<b>${v}</b></span>`).join("")}</div>` : `<p class="muted">Nobody on site right now.</p>`;
+  // projects run at this yard: people are booked on the yard in HR, hours on the project
+  const kids = (p.children || []).length ? `<table class="kids"><thead><tr><th>Projects at ${esc(p.name)}</th><th>Period</th><th class="num">Hours booked</th><th class="num cst">Labour cost</th><th class="num">Last 30 days</th></tr></thead><tbody>${
+      p.children.map(c => `<tr><td><b>${esc(c.name)}</b>${c.in_ragic_list ? "" : ` <span class="faint">(not active in Ragic)</span>`}</td><td class="muted">${period(c)}</td>
+        <td class="num">${c.hours ? fmt(c.hours.total) : "–"}</td><td class="num cst">${c.hours ? eur(c.hours.cost) : "–"}</td><td class="num">${c.hours && c.hours.last30 ? fmt(c.hours.last30) : "–"}</td></tr>`).join("")}</tbody></table>
+      <p class="faint" style="margin:4px 0 12px;font-size:12px">People are registered on the yard in HR, so the headcount is shown for ${esc(p.name)} as a whole.</p>` : "";
   let right = `<p class="muted">No staffing plan for this project in Ragic.</p>`;
   if (p.staffing){
     right = `<table class="plan"><thead><tr><th>Planned by PM (balance)</th>${D.weeks.map((w,i)=>`<th class="num w${i}">W${w}</th>`).join("")}</tr></thead><tbody>${
       p.staffing.by_position.map(r=>`<tr><td>${esc(r.position)}</td>${r.required.map((q,i)=>`<td class="num w${i}"><span class="q">${q}</span><span class="bal ${balCls(r.balance[i])}">${sign(r.balance[i])}</span></td>`).join("")}</tr>`).join("")
     }</tbody></table>`;
   }
-  return `${left}${right}`;
+  return `${left}${kids}${right}`;
 }
 function renderProjects(){
   const cols = `<thead><tr><th>Project</th><th>Period</th>
     <th class="num">On site</th><th class="num">Workshop</th><th class="num">Scheduled</th><th class="num">Home</th>
     <th class="num">Required W${D.week}</th><th class="num">Short / spare</th><th>Trend</th><th class="num">Hours booked</th><th class="num cst">Labour cost</th></tr></thead>`;
-  let rows = "", lastInternal = false;
+  let rows = "", section = "";
   D.projects.forEach((p, i) => {
-    if (p.internal && !lastInternal){ rows += `<tr><td colspan="11" class="faint" style="padding-top:16px">Internal / other assignments</td></tr>`; lastInternal = true; }
+    const sec = p.internal ? "Internal / other assignments" : p.workshop ? "Our workshops (Lithuania)" : "";
+    if (sec !== section){ rows += `<tr><td colspan="11" class="faint" style="padding-top:16px">${sec}</td></tr>`; section = sec; }
     const st = p.status, s = p.staffing;
-    rows += `<tr class="proj" data-i="${i}"><td><b>${esc(pname(p.name))}</b>${p.country ? `<span class="cty">${esc(p.country)}</span>` : ""}</td><td class="wrapcell">${period(p)}</td>
+    const sub = (p.children || []).length ? `<div class="kidnames">${p.children.map(c => esc(c.name)).join(" · ")}</div>` : "";
+    rows += `<tr class="proj" data-i="${i}"><td><b>${esc(pname(p.name))}</b>${p.country ? `<span class="cty">${esc(p.country)}</span>` : ""}${sub}</td><td class="wrapcell">${period(p)}</td>
       <td class="num"><b>${st.Yes||0}</b></td><td class="num">${st.Workshop||""}</td><td class="num">${st.Scheduled||""}</td><td class="num">${st.Home||""}</td>
       <td class="num">${s ? s.required[0] : `<span class="faint">–</span>`}</td>
       <td class="num">${s ? (s.short[0] < 0 ? `<span class="bal n" title="net ${sign(s.balance[0])}">${s.short[0]}</span>` : `<span class="bal ${balCls(s.balance[0])}">${sign(s.balance[0])}</span>`) : `<span class="faint">–</span>`}</td>
-      <td>${spark(p.name)}</td><td class="num">${p.no_ragic_ts ? `<span class="faint" title="This yard does not book timesheets in Ragic – no hours, cost or worker alerts">not in Ragic</span>` : p.hours ? fmt(p.hours.total) : `<span class="faint">–</span>`}</td>
+      <td>${spark(p.name)}</td><td class="num">${p.no_ragic_ts ? `<span class="warnchip" title="This yard does not book timesheets in Ragic – no hours, cost or worker alerts">⚠ not in Ragic</span>` : p.hours ? fmt(p.hours.total) : `<span class="faint">–</span>`}</td>
       <td class="num cst" title="${p.hours ? eurFull(p.hours.cost) : ""}">${p.hours ? eur(p.hours.cost) : `<span class="faint">–</span>`}</td></tr>
       <tr class="detail" data-for="${i}" hidden><td colspan="11">${detail(p)}</td></tr>`;
   });
@@ -995,6 +1039,8 @@ const WK = (function(){
   WK.groups.filter(g => !hs.some(h => h.name === g) && WK.alertsIn(g))
     .forEach(g => hs.push({name: g, total: 0, last30: 0, first: "", last: "", subs: [], positions: {}}));
   if (!hs.length){ $("hoursHint").textContent = "No booked hours found."; return; }
+  let excl = new Set();
+  try { excl = new Set(JSON.parse(localStorage.getItem("hoursExcl") || "[]")); } catch(e){}
   const cm = D.cost_model || {}, src = cm.hours_by_source || {};
   const own = (src.own_rate || 0) + (src.position_avg || 0);
   $("hoursHint").innerHTML = `“Hours real” from the task lists since each project started: ${fmt(D.hours_total)} h<span class="cst"> and about <b>${eur(D.cost_total)}</b> labour cost</span> in total; ${fmt(D.hours_last30)} h<span class="cst"> / ${eur(D.cost_last30)}</span> in the last 30 days. Yards running several projects (e.g. SPG) include all their projects. Click a row for the split by project and position, and for the worker alerts.
@@ -1002,7 +1048,8 @@ const WK = (function(){
     <br><span class="faint cst">Labour cost is an <b>estimate</b>: own staff = net hourly rate from Qualification × ${cm.lt_factor} in Lithuania (income tax, Sodra) or × ${cm.trip_factor} on business trips (assumes ${Math.round((cm.trip_salary_share||0)*100)}% of net pay is salary, the rest tax-free per diem); subcontractors = ${cm.sub_rate} €/h invoice.
     ${own ? `${Math.round((src.own_rate||0)/own*100)}% of own-staff hours use the worker’s own rate, the rest the average rate of the position.` : ""}</span>${(() => {
       const nr = D.projects.filter(p => p.no_ragic_ts).map(p => p.name);
-      return nr.length ? `<br><span class="faint"><b>Not in Ragic:</b> ${nr.map(esc).join(", ")} have people on site but do not book timesheets in Ragic, so they have no hours, cost or worker alerts here.</span>` : "";
+      if (nr.length) $("hoursWarn").innerHTML = `<div class="warnbox"><span class="i">⚠</span><div><b>Not in Ragic: ${nr.map(esc).join(", ")}</b><br>These projects have people on site but do not book timesheets in Ragic, so they have no hours, cost or worker alerts here.</div></div>`;
+      return "";
     })()}`;
   const bars = (entries, tot, cost = {}) => entries.map(([k,v]) => `<div class="row cost"><div class="name" title="${esc(k)}">${esc(k)}</div>
       <div class="track" title="${fmt(v)} h${COSTS ? " · " + eurFull(cost[k]) : ""}"><span style="width:${(v/tot*100).toFixed(1)}%;background:var(--onsite)"></span></div>
@@ -1049,13 +1096,29 @@ const WK = (function(){
     const pos = Object.entries(g.positions);
     const top = g.total ? pos.slice(0,3).map(([k,v]) => `${esc(k)} ${Math.round(v/g.total*100)}%`).join(" · ") : "";
     const na = WK.alertsIn(g.name);
-    rows += `<tr class="proj" data-h="${i}"><td><b>${esc(g.name)}</b></td><td class="num"><b>${g.total ? fmt(g.total) : "–"}</b></td>
+    rows += `<tr class="proj" data-h="${i}"><td>${COSTS ? `<input type="checkbox" class="inc" data-n="${esc(g.name)}" ${excl.has(g.name) ? "" : "checked"} title="Include in the total below" aria-label="Include ${esc(pname(g.name))} in the total"> ` : ""}<b>${esc(pname(g.name))}</b></td><td class="num"><b>${g.total ? fmt(g.total) : "–"}</b></td>
       <td class="num cst" title="${g.cost ? eurFull(g.cost) : ""}"><b>${g.cost ? eur(g.cost) : "–"}</b></td>
-      <td class="num">${g.last30 ? fmt(g.last30) : '<span class="faint">–</span>'}</td><td class="num cst" title="${g.cost30 ? eurFull(g.cost30) : ""}">${g.cost30 ? eur(g.cost30) : '<span class="faint">–</span>'}</td><td class="muted">${g.first ? `${shortDate(g.first)} – ${dateTxt(g.last)}` : "–"}</td>
+      <td class="num">${g.last30 ? fmt(g.last30) : '<span class="faint">–</span>'}</td><td class="num cst" title="${g.cost30 ? eurFull(g.cost30) : ""}">${g.cost30 ? eur(g.cost30) : '<span class="faint">–</span>'}</td><td class="muted">${g.first ? `${dateTxt(g.first)} – ${dateTxt(g.last)}` : "–"}</td>
       <td class="muted">${top}</td><td>${na ? `<span class="alert">⚠ ${na}</span>` : '<span class="faint">–</span>'}</td></tr>
       <tr class="detail" data-hfor="${i}" hidden><td colspan="8"></td></tr>`;
   });
-  $("hours").innerHTML = `<thead><tr><th>Project / yard</th><th class="num">Hours total</th><th class="num cst">Labour cost</th><th class="num">Hours last 30 days</th><th class="num cst">Cost last 30 days</th><th>Booked</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>`;
+  $("hours").innerHTML = `<thead><tr><th>Project / yard</th><th class="num">Hours total</th><th class="num cst">Labour cost</th><th class="num">Hours last 30 days</th><th class="num cst">Cost last 30 days</th><th>First – last entry</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>${COSTS ? `<tfoot><tr class="totrow"><td></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td colspan="3" class="faint"></td></tr></tfoot>` : ""}`;
+  // management mode: total of the ticked projects (the selection is remembered in this browser)
+  function totals(){
+    if (!COSTS) return;
+    const sel = hs.filter(g => !excl.has(g.name)), sum = k => sel.reduce((a, g) => a + (g[k] || 0), 0);
+    const c = $("hours").querySelector("tr.totrow").cells;
+    c[0].innerHTML = `<b>Total</b> <span class="faint">(${sel.length} of ${hs.length} ticked)</span>`;
+    c[1].innerHTML = `<b>${fmt(sum("total"))}</b>`; c[2].innerHTML = `<b>${eur(sum("cost"))}</b>`; c[2].title = eurFull(sum("cost"));
+    c[3].innerHTML = `<b>${fmt(sum("last30"))}</b>`; c[4].innerHTML = `<b>${eur(sum("cost30"))}</b>`; c[4].title = eurFull(sum("cost30"));
+    c[5].textContent = excl.size ? "Untick or tick a project to change the total." : "All projects included – untick a project to leave it out of the total.";
+  }
+  $("hours").querySelectorAll("input.inc").forEach(cb => {
+    cb.onclick = e => e.stopPropagation();
+    cb.onchange = () => { cb.checked ? excl.delete(cb.dataset.n) : excl.add(cb.dataset.n);
+      try { localStorage.setItem("hoursExcl", JSON.stringify([...excl])); } catch(e){} totals(); };
+  });
+  totals();
   $("hours").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
     const d = $("hours").querySelector(`tr.detail[data-hfor="${tr.dataset.h}"]`);
     if (d.hidden && !d.firstElementChild.innerHTML) renderDetail(d.firstElementChild, hs[tr.dataset.h], "total");
@@ -1118,7 +1181,7 @@ const WK = (function(){
               return `<tr><td class="notr">${esc(x.name)}</td><td>${esc(x.position)}</td><td style="color:${c}">${t}${x.where ? ` (${esc(x.where)})` : ""}</td><td class="muted">${x.ready && x.state !== "working" ? shortDate(x.ready) : ""}</td></tr>`; }).join("")}</tbody></table>`
         : `<p class="muted" style="margin:4px 0">Nobody selected yet.</p>`;
       return `<tr class="proj req${done ? " faint" : ""}" data-r="${i}"><td>W${r.week}${r.week===D.week?' <span class="badge">now</span>':""}</td>
-        <td>${D.projects.some(p => p.name === r.project && p.staffing) ? `<a href="#" class="code" data-p="${esc(r.project)}" title="Compare with the PM’s staffing plan">${esc(r.project)} ›</a>` : esc(r.project)}</td><td>${esc(r.position)}</td>
+        <td>${D.projects.some(p => p.name === r.yard && p.staffing) ? `<a href="#" class="code" data-p="${esc(r.yard)}" title="Compare with the PM’s staffing plan">${esc(r.project)} ›</a>` : esc(r.project)}</td><td>${esc(r.position)}</td>
         <td class="num">${r.requested}</td><td class="num">${r.reserved}</td><td class="num">${r.confirmed}</td><td class="num">${r.working}</td>
         <td class="num">${r.gap ? `<b style="color:var(--neg)">${r.gap}</b>` : `<span class="faint">0</span>`}</td>
         <td><span class="bal ${cls}">${word}</span>${r.changed ? ` <span class="faint" title="${r.changed} selected person(s) are not planned for this project in Human Rotation (other project, no project or missing)">· ${r.changed} not in rotation</span>` : ""}</td>
@@ -1183,7 +1246,7 @@ const POS = (function(){
 // ---------- Visual skin ----------
 function renderVisual(){
   const ws = D.workforce.status, total = D.workforce.total;
-  const real = D.projects.filter(p => !p.internal).slice().sort((a,b) => b.onsite - a.onsite || b.active - a.active);
+  const real = D.projects.filter(p => !p.internal && !p.workshop).slice().sort((a,b) => b.onsite - a.onsite || b.active - a.active);
   const card = (inner, cls = "") => `<div class="card ${cls}">${inner}</div>`;
   const sec = (title, sub, body) => `<section class="v-sec">${card(`<div class="v-title">${title}</div><p class="v-sub">${sub}</p>${body}`)}</section>`;
 
@@ -1308,41 +1371,97 @@ function printCard(card){
   print();
 }
 
+// password for the bin of "Attention required" (checked by the bin worker, not by the page)
+function askBinPassword(){
+  return new Promise(resolve => {
+    const m = $("binModal"), done = v => { m.hidden = true; $("binForm").onsubmit = null; resolve(v); };
+    m.hidden = false; $("binPw").value = ""; $("binPw").focus();
+    $("binForm").onsubmit = e => { e.preventDefault(); done($("binPw").value); };
+    $("binClose").onclick = () => done("");
+    m.onclick = e => { if (e.target === m) done(""); };
+  });
+}
+
 // ---------- attention required: the few things that need a decision, most urgent first (max 6) ----------
 (function(){
-  const items = [];   // [score, icon, title, why, action, kind]
+  // [score, icon, title, why, action, kind, id] – id is stable and contains no names (used by the bin)
+  const items = [], sid = s => String(s).replace(/[^A-Za-z0-9_.:-]/g, "_");
   const nextWeek = D.week + 1;
   D.requests.forEach((r, i) => {
     if (r.gap > 0 && r.week <= nextWeek)
       items.push([20 + r.gap + (r.week < D.week ? 5 : 0), "🙋", `${r.project}: ${r.gap} × ${r.position} still needed`,
-        r.week < D.week ? `Manpower request for W${r.week} is overdue` : `Needed in W${r.week}${r.week === D.week ? " (this week)" : " (next week)"} · ${r.reserved} of ${r.requested} reserved`, () => goReq(i), "req"]);
+        r.week < D.week ? `Manpower request for W${r.week} is overdue` : `Needed in W${r.week}${r.week === D.week ? " (this week)" : " (next week)"} · ${r.reserved} of ${r.requested} reserved`, () => goReq(i), "req", `req-${r.id}-W${r.week}`]);
   });
   const rot = D.requests.map((r, i) => [r, i]).filter(([r]) => r.changed > 0 && r.week >= D.week);
   if (rot.length){
     const n = rot.reduce((s, [r]) => s + r.changed, 0);
     items.push([15 + n, "🔄", `${n} selected ${n > 1 ? "people are" : "person is"} not planned in Human Rotation`,
-      [...new Set(rot.map(([r]) => `${r.project} W${r.week}`))].join(", ") + " – rotation changed by hand or not planned yet", () => goReq(rot[0][1]), "rot"]);
+      [...new Set(rot.map(([r]) => `${r.project} W${r.week}`))].join(", ") + " – rotation changed by hand or not planned yet", () => goReq(rot[0][1]), "rot",
+      "rot-" + rot.map(([r]) => r.id).sort().join("_")]);
   }
   D.projects.filter(p => !p.internal && p.staffing && p.staffing.short[0] < 0).forEach(p =>
     items.push([8 + -p.staffing.short[0], "📉", `${p.name}: ${-p.staffing.short[0]} people below the PM’s plan this week`,
-      p.staffing.by_position.filter(r => r.balance[0] < 0).map(r => `${-r.balance[0]} × ${r.position}`).join(", "), el => POS.open(p.name, el), "plan"]));
+      p.staffing.by_position.filter(r => r.balance[0] < 0).map(r => `${-r.balance[0]} × ${r.position}`).join(", "), el => POS.open(p.name, el), "plan", `plan-${sid(p.name)}-W${D.week}`]));
   const fc = (D.workers || {}).flag_counts || {};
-  if (fc.no_ts) items.push([10 + fc.no_ts / 10, "🕒", `${fc.no_ts} workers on site without a timesheet for W${D.workers.last_week}`, "Hours may be missing – cannot be billed", () => WK.open(null, "no_ts"), "wk"]);
-  if (fc.over60) items.push([9 + fc.over60 / 10, "📅", `${fc.over60} workers had weeks over 60 hours`, "Dutch law: max. 60 h a week (last 16 weeks)", () => WK.open(null, "over60"), "wk"]);
-  if (fc.mismatch) items.push([7 + fc.mismatch / 10, "📍", `${fc.mismatch} workers booked hours at another location`, "HR card or timesheet may be wrong", () => WK.open(null, "mismatch"), "wk"]);
-  if (D.workforce.unassigned) items.push([6, "🏠", `${D.workforce.unassigned} active people at home without a project`, "Available to assign", null, "home"]);
+  if (fc.no_ts) items.push([10 + fc.no_ts / 10, "🕒", `${fc.no_ts} workers on site without a timesheet for W${D.workers.last_week}`, "Hours may be missing – cannot be billed", () => WK.open(null, "no_ts"), "wk", `wk-no_ts-W${D.workers.last_week}`]);
+  if (fc.over60) items.push([9 + fc.over60 / 10, "📅", `${fc.over60} workers had weeks over 60 hours`, "Dutch law: max. 60 h a week (last 16 weeks)", () => WK.open(null, "over60"), "wk", `wk-over60-W${D.week}`]);
+  if (fc.mismatch) items.push([7 + fc.mismatch / 10, "📍", `${fc.mismatch} workers booked hours at another location`, "HR card or timesheet may be wrong", () => WK.open(null, "mismatch"), "wk", `wk-mismatch-W${D.week}`]);
+  if (D.workforce.unassigned) items.push([6, "🏠", `${D.workforce.unassigned} active people at home without a project`, "Available to assign", null, "home", `home-W${D.week}`]);
   items.sort((a, b) => b[0] - a[0]);
-  // keep the list varied: at most 2 requests, 1 staffing plan item and 2 worker alerts
-  const cap = {req: 2, rot: 1, plan: 1, wk: 2, home: 1}, used = {}, top = [];
-  for (const it of items){
-    if (top.length === 6) break;
-    if ((used[it[5]] || 0) < cap[it[5]]){ top.push(it); used[it[5]] = (used[it[5]] || 0) + 1; }
+  // bin: 🗑 hides a point for everybody, ↩ shows it again – both with the bin password. The IDs of hidden
+  // points are kept in hidden.txt in the repository; worker/bin-worker.js writes it (it keeps the GitHub
+  // token, so the page never holds one). The page reads the current list before it shows the points.
+  const BIN = D.bin_url;
+  let hidden = new Set(D.hidden || []), binOpen = false, msg = "";
+  const keyOf = it => it[6];
+  function render(){
+    const live = items.filter(it => !hidden.has(keyOf(it))), inBin = items.filter(it => hidden.has(keyOf(it)));
+    // keep the list varied: at most 2 requests, 1 staffing plan item and 2 worker alerts
+    const cap = {req: 2, rot: 1, plan: 1, wk: 2, home: 1}, used = {}, top = [];
+    for (const it of live){
+      if (top.length === 6) break;
+      if ((used[it[5]] || 0) < cap[it[5]]){ top.push(it); used[it[5]] = (used[it[5]] || 0) + 1; }
+    }
+    if (!top.length && !inBin.length){ $("attn").hidden = true; return; }
+    $("attn").hidden = false;
+    const li = (it, inB) => `<li data-i="${items.indexOf(it)}" class="${!inB && it[0] >= 15 ? "hi" : ""}"><span class="ico">${it[1]}</span><div style="flex:1"><div class="t">${esc(it[2])}</div><div class="w">${esc(it[3])}</div></div>
+      ${BIN ? `<button class="binbtn" data-i="${items.indexOf(it)}" title="${inB ? "Show again for everybody" : "Hide for everybody"}">${inB ? "↩" : "🗑"}</button>` : ""}</li>`;
+    $("attn").innerHTML = `<h2>⚠ Attention required${inBin.length ? `<button class="toggle binlist" style="margin-left:auto;font-size:12px" title="Hidden points">🗑 ${inBin.length}</button>` : ""}</h2>
+      <p class="hint" style="margin:0">The most urgent points from all sections below. Click one for details.</p>
+      ${top.length ? `<ul>${top.map(it => li(it, false)).join("")}</ul>` : `<p class="muted" style="margin:8px 0 0">Nothing urgent left.</p>`}
+      ${binOpen && inBin.length ? `<div class="binbox"><ul>${inBin.map(it => li(it, true)).join("")}</ul></div>` : ""}
+      ${msg ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(msg)}</p>` : ""}`;
+    $("attn").querySelectorAll("li").forEach(el => el.onclick = () => { const a = items[el.dataset.i][4]; if (a) a(el); });
+    $("attn").querySelectorAll(".binbtn").forEach(b => b.onclick = e => { e.stopPropagation(); toggle(items[b.dataset.i]); });
+    const bl = $("attn").querySelector(".binlist"); if (bl) bl.onclick = () => { binOpen = !binOpen; render(); };
   }
-  if (!top.length) return;
-  $("attn").hidden = false;
-  $("attn").innerHTML = `<h2>⚠ Attention required</h2><p class="hint" style="margin:0">The most urgent points from all sections below. Click one for details.</p>
-    <ul>${top.map(([s, ico, t, w], i) => `<li data-i="${i}" class="${s >= 15 ? "hi" : ""}"><span class="ico">${ico}</span><div><div class="t">${esc(t)}</div><div class="w">${esc(w)}</div></div></li>`).join("")}</ul>`;
-  $("attn").querySelectorAll("li").forEach(li => li.onclick = () => { const a = top[li.dataset.i][4]; if (a) a(li); });
+  async function toggle(it){
+    let pw = "";
+    try { pw = sessionStorage.getItem("binPw") || ""; } catch(e){}
+    if (!pw) pw = await askBinPassword();
+    if (!pw) return;
+    const restore = hidden.has(keyOf(it));
+    msg = "Saving…"; render();
+    try {
+      const r = await fetch(BIN, {method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({id: keyOf(it), action: restore ? "restore" : "hide", password: pw})});
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 403){ try { sessionStorage.removeItem("binPw"); } catch(e){} msg = "Wrong password."; render(); return; }
+      if (!r.ok) throw new Error(j.error || r.status);
+      try { sessionStorage.setItem("binPw", pw); } catch(e){}
+      hidden = new Set(j.ids); msg = restore ? "Shown again for everybody." : "Hidden for everybody.";
+    } catch(err){ msg = "Could not save (" + err.message + "). Try again later."; }
+    render();
+  }
+  render();
+  // the current list – the page may be older than the last change in the bin
+  (async () => {
+    try {
+      if (BIN){ const r = await fetch(BIN, {cache: "no-store"}); if (r.ok){ hidden = new Set((await r.json()).ids); render(); return; } }
+      const r = await fetch(D.hidden_raw_url + "?t=" + Date.now(), {cache: "no-store"});
+      if (r.ok){ hidden = new Set((await r.text()).split(/\r?\n/).map(s => s.trim()).filter(Boolean)); render(); }
+    } catch(e){}
+  })();
   function goReq(i){
     if ($("classic").hidden){ document.querySelector(".v-req")?.scrollIntoView({behavior:"smooth", block:"center"}); return; }
     const tr = $("requests").querySelector(`tr.req[data-r="${i}"]`);
