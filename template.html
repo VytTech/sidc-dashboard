@@ -87,7 +87,9 @@ tr.totrow td{border-top:2px solid var(--ink);border-bottom:0;background:var(--so
 input.inc{accent-color:var(--accent);vertical-align:-2px;margin:0 4px 0 0;cursor:pointer}
 .binbtn{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:7px;padding:2px 7px;font:inherit;font-size:13px;cursor:pointer;flex:none;align-self:center}
 .binbtn:hover{border-color:var(--neg);color:var(--neg)}
-.binbox{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px;opacity:.75}
+.binbox{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}
+.binbox li{opacity:.4;filter:grayscale(1)}
+.binbox li:hover{opacity:.75}
 .kidnames{font-size:11.5px;color:var(--muted);font-weight:400;margin:1px 0 0 14px;white-space:normal}
 .warnchip{display:inline-block;background:color-mix(in srgb,var(--scheduled) 22%,transparent);color:var(--scheduled);border:1px solid var(--scheduled);border-radius:6px;padding:1px 7px;font-weight:700;font-size:12px}
 .warnbox{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--scheduled);background:color-mix(in srgb,var(--scheduled) 14%,var(--card));border-radius:10px;padding:10px 14px;margin:6px 0 12px;font-size:13.5px;color:var(--ink)}
@@ -251,7 +253,7 @@ button.pill.bad::after{content:"›";font-size:16px;line-height:1;margin-left:2p
 .stale{border:1px solid var(--scheduled);background:color-mix(in srgb,var(--scheduled) 14%,var(--card));border-radius:10px;padding:10px 14px;margin:0 0 14px}
 .attn{margin:0 0 14px;border-color:var(--neg)}
 .attn h2{display:flex;align-items:center;gap:8px}
-.attn ul{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));gap:8px}
+.attn ul{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:8px}
 .attn li{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:8px;padding:8px 10px;cursor:pointer;border:1px solid transparent}
 .attn li:hover{border-color:var(--accent)}
 .attn li .ico{font-size:17px;line-height:1.3}
@@ -561,7 +563,7 @@ const LT = {
   "Projects at":"Projektai vietoje", "Bin password":"Šiukšlinės slaptažodis", "Hiding or showing a point changes the list for everybody, so it needs the bin password. It is remembered in this browser tab.":"Paslėptas ar grąžintas punktas keičia sąrašą visiems, todėl reikia šiukšlinės slaptažodžio. Jis įsimenamas šioje naršyklės kortelėje.", "Hide for everybody":"Paslėpti visiems", "Show again for everybody":"Vėl rodyti visiems", "Hidden points":"Paslėpti punktai", "Saving…":"Saugoma…", "Hidden for everybody.":"Paslėpta visiems.", "Shown again for everybody.":"Vėl rodoma visiems.", "Could not save":"Nepavyko išsaugoti", "Try again later.":"Bandykite vėliau.", "Put in the bin":"Į šiukšlinę", "Restore":"Atstatyti", "Nothing urgent left.":"Skubių dalykų neliko.", "(not active in Ragic)":"(Ragic neaktyvus)", "People are registered on the yard in HR, so the headcount is shown for":"HR žmonės priskirti vietai, todėl žmonių skaičius rodomas visai vietai", "as a whole.":".",
   "Our workshops (Lithuania)":"Mūsų cechai (Lietuva)", "yards and workshops not counted":"vietos ir cechai neskaičiuojami",
   "These projects have people on site but do not book timesheets in Ragic, so they have no hours, cost or worker alerts here.":"Šiuose projektuose dirba žmonės, bet darbo laikas Ragic nepildomas, todėl čia nėra jų valandų, kaštų ir darbuotojų įspėjimų.",
-  "First – last entry":"Pirmas – paskutinis įrašas", "Include in the total below":"Įtraukti į sumą apačioje", "Untick or tick a project to change the total.":"Pažymėkite arba atžymėkite projektą, kad pakeistumėte sumą.",
+  "First – last entry":"Pirmas – paskutinis įrašas", "Include in the total below":"Įtraukti į sumą apačioje", "Select / deselect all":"Pažymėti / atžymėti visus", "Untick or tick a project to change the total.":"Pažymėkite arba atžymėkite projektą, kad pakeistumėte sumą.",
   "All projects included – untick a project to leave it out of the total.":"Įtraukti visi projektai – atžymėkite projektą, kad jo nebūtų sumoje.",
 };
 const RU_RULES = [
@@ -693,7 +695,7 @@ const RU = {
   "Projects at":"Проекты на", "Bin password":"Пароль корзины", "Hiding or showing a point changes the list for everybody, so it needs the bin password. It is remembered in this browser tab.":"Скрытие или возврат пункта меняет список для всех, поэтому нужен пароль корзины. Он запоминается в этой вкладке.", "Hide for everybody":"Скрыть для всех", "Show again for everybody":"Снова показать всем", "Hidden points":"Скрытые пункты", "Saving…":"Сохранение…", "Hidden for everybody.":"Скрыто для всех.", "Shown again for everybody.":"Снова показано всем.", "Could not save":"Не удалось сохранить", "Try again later.":"Попробуйте позже.", "Put in the bin":"В корзину", "Restore":"Восстановить", "Nothing urgent left.":"Срочного ничего не осталось.", "(not active in Ragic)":"(не активен в Ragic)", "People are registered on the yard in HR, so the headcount is shown for":"В HR люди закреплены за верфью, поэтому численность показана для", "as a whole.":"в целом.",
   "Our workshops (Lithuania)":"Наши цеха (Литва)", "yards and workshops not counted":"верфи и цеха не считаются",
   "These projects have people on site but do not book timesheets in Ragic, so they have no hours, cost or worker alerts here.":"На этих проектах работают люди, но табель в Ragic не ведётся, поэтому здесь нет их часов, затрат и предупреждений.",
-  "First – last entry":"Первая – последняя запись", "Include in the total below":"Включить в итог ниже", "Untick or tick a project to change the total.":"Отметьте или снимите отметку с проекта, чтобы изменить итог.",
+  "First – last entry":"Первая – последняя запись", "Include in the total below":"Включить в итог ниже", "Select / deselect all":"Отметить / снять все", "Untick or tick a project to change the total.":"Отметьте или снимите отметку с проекта, чтобы изменить итог.",
   "All projects included – untick a project to leave it out of the total.":"Включены все проекты – снимите отметку, чтобы исключить проект из итога.",
 };
 const TR_DICT = LANG === "lt" ? LT : LANG === "ru" ? RU : null;
@@ -929,7 +931,7 @@ function spark(name){
 // ---------- projects table ----------
 function period(p){
   if (!p.start && !p.end) return `<span class="faint">–</span>`;
-  let s = `${p.start?shortDate(p.start):"…"} – ${p.end?dateTxt(p.end):"…"}`;
+  let s = `${p.start?dateTxt(p.start):"…"} – ${p.end?dateTxt(p.end):"…"}`;
   if (p.end){
     const wl = Math.ceil((new Date(p.end) - new Date(D.date)) / (7*864e5));
     s += wl >= 0 ? ` <span class="faint">(${wl} wk left)</span>` : ` <span class="down">(ended)</span>`;
@@ -1041,6 +1043,8 @@ const WK = (function(){
   if (!hs.length){ $("hoursHint").textContent = "No booked hours found."; return; }
   let excl = new Set();
   try { excl = new Set(JSON.parse(localStorage.getItem("hoursExcl") || "[]")); } catch(e){}
+  const subExcl = {};   // yard -> projects left out of the yard total
+  try { Object.entries(JSON.parse(localStorage.getItem("subExcl") || "{}")).forEach(([k, v]) => subExcl[k] = new Set(v)); } catch(e){}
   const cm = D.cost_model || {}, src = cm.hours_by_source || {};
   const own = (src.own_rate || 0) + (src.position_avg || 0);
   $("hoursHint").innerHTML = `“Hours real” from the task lists since each project started: ${fmt(D.hours_total)} h<span class="cst"> and about <b>${eur(D.cost_total)}</b> labour cost</span> in total; ${fmt(D.hours_last30)} h<span class="cst"> / ${eur(D.cost_last30)}</span> in the last 30 days. Yards running several projects (e.g. SPG) include all their projects. Click a row for the split by project and position, and for the worker alerts.
@@ -1064,11 +1068,25 @@ const WK = (function(){
     const subsList = isTotal ? g.subs : p.subs;
     const pos = Object.entries(p.positions || {});
     const summary = `<div class="period-sum"><b>${isTotal ? "Since the start" : monthLong(p.m)}:</b> ${fmt(p.total)} h<span class="cst"> · <b>${eur(p.cost)}</b> labour cost</span></div>`;
+    // management mode: tick the projects of this yard that go into the yard total below
+    const ex = subExcl[g.name] || new Set(), sel = subsList.filter(s => !ex.has(s.name));
+    const sum = k => sel.reduce((a, s) => a + (s[k] || 0), 0);
+    const cb = s => COSTS ? `<input type="checkbox" class="subinc" data-n="${esc(s.name)}" ${ex.has(s.name) ? "" : "checked"} aria-label="Include ${esc(s.name)} in the total"> ` : "";
+    const all = COSTS ? `<input type="checkbox" class="suball" aria-label="Select or deselect all" ${sel.length === subsList.length ? "checked" : ""} data-some="${sel.length > 0 && sel.length < subsList.length}"> ` : "";
     const subs = !subsList.length ? `<p class="muted">No hours booked in this period.</p>`
-      : `<table><thead><tr><th>Project</th><th class="num">Hours</th><th class="num cst">Labour cost</th>${isTotal ? '<th class="num">Last 30 days</th>' : ""}</tr></thead><tbody>${
-          subsList.map(s=>`<tr><td>${esc(s.name)}</td><td class="num">${fmt(s.total)}</td><td class="num cst" title="${eurFull(s.cost)}">${eur(s.cost)}</td>${
-            isTotal ? `<td class="num">${s.last30 ? fmt(s.last30) : '<span class="faint">–</span>'}</td>` : ""}</tr>`).join("")}</tbody></table>`;
-    const posHtml = pos.length ? bars(pos, pos[0][1], p.position_cost) : '<span class="faint">No hours in this period.</span>';
+      : `<table><thead><tr><th>${all}Project</th><th class="num">Hours</th><th class="num cst">Labour cost</th>${isTotal ? '<th class="num">Last 30 days</th>' : ""}</tr></thead><tbody>${
+          subsList.map(s=>`<tr${ex.has(s.name) ? ' class="faint"' : ""}><td>${cb(s)}${esc(s.name)}</td><td class="num">${fmt(s.total)}</td><td class="num cst" title="${eurFull(s.cost)}">${eur(s.cost)}</td>${
+            isTotal ? `<td class="num">${s.last30 ? fmt(s.last30) : '<span class="faint">–</span>'}</td>` : ""}</tr>`).join("")}</tbody>${
+          COSTS ? `<tfoot><tr class="totrow"><td><b>Total</b> <span class="faint">(${sel.length} of ${subsList.length} ticked)</span></td><td class="num"><b>${fmt(sum("total"))}</b></td>
+            <td class="num" title="${eurFull(sum("cost"))}"><b>${eur(sum("cost"))}</b></td>${isTotal ? `<td class="num"><b>${fmt(sum("last30"))}</b></td>` : ""}</tr></tfoot>` : ""}</table>`;
+    // positions of the ticked projects only (management mode); otherwise the whole yard
+    let posE = pos, posCost = p.position_cost;
+    if (COSTS && ex.size && subsList.every(s => s.pos)){
+      const h = {}, c = {};
+      sel.forEach(s => Object.entries(s.pos).forEach(([k, v]) => { h[k] = (h[k] || 0) + v; c[k] = (c[k] || 0) + ((s.pos_cost || {})[k] || 0); }));
+      posE = Object.entries(h).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]); posCost = c;
+    }
+    const posHtml = posE.length ? bars(posE, posE[0][1], posCost) : '<span class="faint">No hours in this period.</span>';
     return {summary, subs, posHtml};
   }
   function periodButtons(g, active){
@@ -1089,6 +1107,18 @@ const WK = (function(){
       renderDetail(cell, g, b.dataset.k === "total" ? "total" : Number(b.dataset.k));
     });
     cell.querySelectorAll(".wkbtn").forEach(b => b.onclick = e => { e.stopPropagation(); WK.open(b.dataset.g); });
+    // project ticks inside the yard (remembered in this browser)
+    const save = () => { try { localStorage.setItem("subExcl", JSON.stringify(Object.fromEntries(Object.entries(subExcl).map(([k, s]) => [k, [...s]])))); } catch(e){} };
+    const ex = subExcl[g.name] = subExcl[g.name] || new Set();
+    cell.querySelectorAll("input.subinc").forEach(c => c.onchange = () => {
+      c.checked ? ex.delete(c.dataset.n) : ex.add(c.dataset.n); save(); renderDetail(cell, g, key); });
+    const sa = cell.querySelector("input.suball");
+    if (sa){
+      sa.indeterminate = sa.dataset.some === "true";
+      sa.onchange = () => { const list = key === "total" ? g.subs : g.months[key].subs;
+        sa.checked ? list.forEach(s => ex.delete(s.name)) : list.forEach(s => ex.add(s.name)); save(); renderDetail(cell, g, key); };
+    }
+    cell.querySelectorAll("input.subinc, input.suball").forEach(c => c.onclick = e => e.stopPropagation());
   }
 
   let rows = "";
@@ -1102,21 +1132,28 @@ const WK = (function(){
       <td class="muted">${top}</td><td>${na ? `<span class="alert">⚠ ${na}</span>` : '<span class="faint">–</span>'}</td></tr>
       <tr class="detail" data-hfor="${i}" hidden><td colspan="8"></td></tr>`;
   });
-  $("hours").innerHTML = `<thead><tr><th>Project / yard</th><th class="num">Hours total</th><th class="num cst">Labour cost</th><th class="num">Hours last 30 days</th><th class="num cst">Cost last 30 days</th><th>First – last entry</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>${COSTS ? `<tfoot><tr class="totrow"><td></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td colspan="3" class="faint"></td></tr></tfoot>` : ""}`;
+  $("hours").innerHTML = `<thead><tr><th>${COSTS ? `<input type="checkbox" class="incall" aria-label="Select or deselect all"> ` : ""}Project / yard</th><th class="num">Hours total</th><th class="num cst">Labour cost</th><th class="num">Hours last 30 days</th><th class="num cst">Cost last 30 days</th><th>First – last entry</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>${COSTS ? `<tfoot><tr class="totrow"><td></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td colspan="3" class="faint"></td></tr></tfoot>` : ""}`;
   // management mode: total of the ticked projects (the selection is remembered in this browser)
   function totals(){
     if (!COSTS) return;
     const sel = hs.filter(g => !excl.has(g.name)), sum = k => sel.reduce((a, g) => a + (g[k] || 0), 0);
-    const c = $("hours").querySelector("tr.totrow").cells;
+    const c = $("hours").querySelector(":scope > tfoot > tr.totrow").cells;   // not the yard totals inside the rows
     c[0].innerHTML = `<b>Total</b> <span class="faint">(${sel.length} of ${hs.length} ticked)</span>`;
     c[1].innerHTML = `<b>${fmt(sum("total"))}</b>`; c[2].innerHTML = `<b>${eur(sum("cost"))}</b>`; c[2].title = eurFull(sum("cost"));
     c[3].innerHTML = `<b>${fmt(sum("last30"))}</b>`; c[4].innerHTML = `<b>${eur(sum("cost30"))}</b>`; c[4].title = eurFull(sum("cost30"));
-    c[5].textContent = excl.size ? "Untick or tick a project to change the total." : "All projects included – untick a project to leave it out of the total.";
+    const all = $("hours").querySelector(":scope > thead input.incall");
+    all.checked = sel.length === hs.length; all.indeterminate = sel.length > 0 && sel.length < hs.length;
   }
+  const saveExcl = () => { try { localStorage.setItem("hoursExcl", JSON.stringify([...excl])); } catch(e){} };
+  if (COSTS) $("hours").querySelector(":scope > thead input.incall").onchange = e => {
+    excl = e.target.checked ? new Set() : new Set(hs.map(g => g.name));
+    $("hours").querySelectorAll("input.inc").forEach(c => c.checked = !excl.has(c.dataset.n));
+    saveExcl(); totals();
+  };
   $("hours").querySelectorAll("input.inc").forEach(cb => {
     cb.onclick = e => e.stopPropagation();
     cb.onchange = () => { cb.checked ? excl.delete(cb.dataset.n) : excl.add(cb.dataset.n);
-      try { localStorage.setItem("hoursExcl", JSON.stringify([...excl])); } catch(e){} totals(); };
+      saveExcl(); totals(); };
   });
   totals();
   $("hours").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {

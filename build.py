@@ -108,7 +108,7 @@ def _fernet():
 # Cost figures are moved out of the page data into an encrypted block. Stdlib only, mirrored in
 # template.html with WebCrypto: PBKDF2-SHA256 -> 64 bytes (32 encryption + 32 MAC key),
 # keystream = HMAC-SHA256(enc_key, nonce || counter), tag = HMAC-SHA256(mac_key, salt || nonce || ciphertext).
-COST_KEYS = {"cost", "cost30", "position_cost", "cost_total", "cost_last30", "cost_model"}
+COST_KEYS = {"cost", "cost30", "position_cost", "pos_cost", "cost_total", "cost_last30", "cost_model"}
 MGMT_ITERATIONS = 200_000
 
 
@@ -397,10 +397,13 @@ def aggregate_hours(rows, today, names, labour=None):
         recent = day > month_ago
         g = groups.setdefault(site, {"name": site, "first": day, "last": day, "t": Counter(),
                                      "subs": defaultdict(Counter), "positions": defaultdict(Counter),
+                                     "subpos": defaultdict(lambda: defaultdict(Counter)),
                                      "months": defaultdict(lambda: {"subs": defaultdict(Counter),
-                                                                    "positions": defaultdict(Counter)})})
+                                                                    "positions": defaultdict(Counter),
+                                                                    "subpos": defaultdict(lambda: defaultdict(Counter))})})
         mm = g["months"][day[:7]]
-        for c in (mm["subs"][proj], mm["positions"][pos]):
+        # hours by position per project too, so the page can recompute a yard for the ticked projects only
+        for c in (mm["subs"][proj], mm["positions"][pos], mm["subpos"][proj][pos], g["subpos"][proj][pos]):
             c["h"] += hrs
             c["cost"] += cost
         g["first"], g["last"] = min(g["first"], day), max(g["last"], day)
@@ -415,20 +418,25 @@ def aggregate_hours(rows, today, names, labour=None):
     figs = lambda c: {"total": round(c["total"]), "last30": round(c["last30"]),
                       "cost": round(c["cost"]), "cost30": round(c["cost30"])}
 
+    def subpos(d):   # hours by position and (separately, so it can be encrypted) labour cost by position
+        items = sorted(d.items(), key=lambda kv: -kv[1]["h"])
+        return {"pos": {p: round(c["h"]) for p, c in items}, "pos_cost": {p: round(c["cost"]) for p, c in items}}
+
     def month_figs(m, mm):
         if not mm:
             return {"m": m, "total": 0, "cost": 0, "subs": [], "positions": {}, "position_cost": {}}
         subs = sorted(mm["subs"].items(), key=lambda kv: -kv[1]["h"])
         pos = sorted(mm["positions"].items(), key=lambda kv: -kv[1]["h"])
         return {"m": m, "total": round(sum(v["h"] for _, v in subs)), "cost": round(sum(v["cost"] for _, v in subs)),
-                "subs": [{"name": k, "total": round(v["h"]), "cost": round(v["cost"])} for k, v in subs],
+                "subs": [{"name": k, "total": round(v["h"]), "cost": round(v["cost"]), **subpos(mm["subpos"][k])} for k, v in subs],
                 "positions": {k: round(v["h"]) for k, v in pos},
                 "position_cost": {k: round(v["cost"]) for k, v in pos}}
 
     out = []
     for g in sorted(groups.values(), key=lambda g: -g["t"]["total"]):
         out.append({"name": g["name"], **figs(g["t"]), "first": g["first"], "last": g["last"],
-                    "subs": [{"name": k, **figs(v)} for k, v in sorted(g["subs"].items(), key=lambda kv: -kv[1]["total"])],
+                    "subs": [{"name": k, **figs(v), **subpos(g["subpos"][k])}
+                             for k, v in sorted(g["subs"].items(), key=lambda kv: -kv[1]["total"])],
                     "positions": {k: round(v["h"]) for k, v in sorted(g["positions"].items(), key=lambda kv: -kv[1]["h"])},
                     "position_cost": {k: round(v["cost"]) for k, v in g["positions"].items()},
                     "months": [month_figs(m, g["months"].get(m)) for m in months_from(g["first"])]})
