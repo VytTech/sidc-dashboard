@@ -41,8 +41,10 @@ SHEETS = {
     "hours": {
         "path": "sub/20",
         "params": {"subtables": "0",
-                   "fetchDomainIds": ["1003457", "1009449", "1009445", "1000166", "1000180", "1000192", "1009444"]},
-        "keep": ["Project-sub", "Project-T", "Position", "Hours real", "Data task sub", "Employee-sub", "Company-T"],
+                   "fetchDomainIds": ["1003457", "1009449", "1009445", "1000166", "1000180", "1000192", "1009444", "1016006"]},
+        # Group (formula = Project-sub, a Ragic user group): empty when that user group does not exist,
+        # then foremen cannot see the hours (build.py flags it). Appended last to keep the column order.
+        "keep": ["Project-sub", "Project-T", "Position", "Hours real", "Data task sub", "Employee-sub", "Company-T", "Group"],
         "compact": True,
     },
     # Net hourly rate per worker (used only on the build machine for project labour cost)

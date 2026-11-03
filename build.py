@@ -449,6 +449,26 @@ def aggregate_hours(rows, today, names, labour=None):
     return {"groups": out, "by_name": by_name, **figs(T)}
 
 
+def hidden_hours(rows, today, days=180):
+    """Hours whose Group is empty, per project (only projects booked in the last `days` days).
+    Group = Project-sub written into a Ragic *user group* field; when no user group with that name exists
+    Ragic silently leaves it empty and only managers can see those hours (e.g. NL-SPG-852 in 2026)."""
+    if not any(len(r) > 7 for r in rows):
+        return []   # raw data without the Group column (older fetch) - nothing to check
+    today_s, since = today.isoformat(), (today - dt.timedelta(days=days)).isoformat()
+    hrs, cnt, last = Counter(), Counter(), {}
+    for r in rows:
+        proj, day, h = (r[0] or "").strip(), ragic_date(r[4]), num(r[3])
+        if not proj or not day or day > today_s or not h or proj in TECHNICAL or proj in INTERNAL_TIMESHEETS:
+            continue
+        last[proj] = max(last.get(proj, ""), day)
+        if not str((r[7] if len(r) > 7 else "") or "").strip():
+            hrs[proj] += h
+            cnt[proj] += 1
+    return sorted(({"project": p, "hours": round(h), "rows": cnt[p], "last": last[p]}
+                   for p, h in hrs.items() if last[p] >= since and h >= 1), key=lambda x: -x["hours"])
+
+
 PROJECT_CODE = re.compile(r"^[A-Z]{2}-[A-Z0-9]+-\d+$")   # real projects (NL-SPG-716); other names are yards / workshops
 
 
@@ -680,6 +700,7 @@ def build_snapshot(raw, today):
         "week_starts": [dt.date.fromisocalendar(year, w, 1).isoformat() for w in weeks],
         "projects": projects,
         "project_codes": project_codes,
+        "hidden_hours": hidden_hours(rows, today),
         "unassigned_key": UNASSIGNED,
         "workforce": {"total": sum(status_total.values()), "status": dict(status_total), "own": own, "sub": sub,
                       "unassigned": sum(by_project.get(UNASSIGNED, Counter()).values()),
