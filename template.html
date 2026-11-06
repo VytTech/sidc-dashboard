@@ -51,7 +51,9 @@ section{margin-top:22px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:16px}
 .grid{display:grid;gap:12px}
 .kpis{grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}
-.kpi .label{color:var(--muted);font-size:12.5px;display:flex;align-items:center;gap:6px}
+/* label always takes two lines so the numbers of all cards sit on one line */
+.kpi .label{color:var(--muted);font-size:12.5px;line-height:1.3;min-height:2.6em;display:flex;align-items:flex-start;gap:6px}
+.kpi .label .dot{margin-top:4px}
 .kpi .value{font-size:28px;font-weight:650;letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums}
 .kpi .delta{font-size:12px;color:var(--faint);margin-top:2px;min-height:16px}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
@@ -178,12 +180,13 @@ td.hot{color:var(--neg);font-weight:700}
 .wkbtn.has{border-color:var(--neg);color:var(--neg);background:var(--neg-bg)}
 .wkbtn:hover{filter:brightness(1.05)}
 [hidden]{display:none !important}
-.modal{position:fixed;inset:0;z-index:50;background:rgba(5,8,12,.55);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto}
-.modal-box{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:100%;max-width:1150px;padding:18px 16px}
+/* dim and blur the page strongly so the open window clearly stands out */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(5,8,12,.8);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto}
+.modal-box{background:var(--card);border:1px solid var(--accent);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.6);width:100%;max-width:1150px;padding:18px 16px}
 .modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
 .modal .tablewrap{max-height:62vh;overflow:auto}
 @media (max-width:520px){.modal{padding:8px}.modal-box{padding:14px 12px}}
-.modal.anchored{display:block;padding:0;background:rgba(5,8,12,.28)}
+.modal.anchored{display:block;padding:0;background:rgba(5,8,12,.65)}
 .modal.anchored .modal-box{position:fixed;width:min(720px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.45),0 0 0 1px var(--accent)}
 .plan-note{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--accent);background:var(--sel-detail);border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:13.5px}
 .plan-note .i{font-size:18px;line-height:1.2}
@@ -341,13 +344,13 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
   </section>
 
   <section class="card">
-    <h2>Projects</h2>
+    <h2>Projects manpower plan</h2>
     <p class="hint">All active projects. Click a row for the position breakdown and the 8-week staffing plan. Short / spare = people booked minus the <b>project manager’s staffing plan</b> this week (red = fewer than planned in at least one job). This is not a request for new people – see “Additional manpower requests”.</p>
     <div class="tablewrap"><table id="projects"></table></div>
   </section>
 
   <section class="card">
-    <h2>Hours booked</h2>
+    <h2>Project hours</h2>
     <p class="hint" id="hoursHint"></p>
     <div id="hoursWarn"></div>
     <div class="tablewrap"><table id="hours"></table></div>
@@ -479,7 +482,7 @@ const LT = {
   "without a project":"be projekto", "available (no project)":"laisvi (be projekto)", "inactive projects – no recent hours":"neaktyvūs projektai – pastaruoju metu valandų nėra", "Hide inactive projects":"Slėpti neaktyvius projektus","Unassigned resources (at home)":"Nepriskirti resursai (namie)", "Unassigned resources":"Nepriskirti resursai",
   "active · at home · no project":"aktyvūs · namie · be projekto", "Active workforce":"Aktyvūs darbuotojai", "Active projects":"Aktyvūs projektai",
   "Below PM plan":"Mažiau nei PM plane", "vs. staffing plan, not requests":"pagal PM planą, ne pagal užklausas", "People still needed":"Dar trūksta žmonių",
-  "Hours booked":"Įrašytos valandos", "(unassigned)":"(nepriskirta)", "30 days":"30 d.", "90 days":"90 d.", "180 days":"180 d.", "last 30 days":"paskutinės 30 d.", "Labour cost":"Darbo kaštai", "h since start":"val. nuo pradžios",
+  "Hours booked":"Įrašytos valandos", "Project hours":"Projektų valandos", "Projects manpower plan":"Projektų darbuotojų planas","(unassigned)":"(nepriskirta)", "30 days":"30 d.", "90 days":"90 d.", "180 days":"180 d.", "last 30 days":"paskutinės 30 d.", "Labour cost":"Darbo kaštai", "h since start":"val. nuo pradžios",
   "since start (estimate)":"nuo pradžios (įvertis)", "no change vs previous day":"be pokyčių nuo vakar", "vs previous day":"nuo vakar",
   // changes + trend
   "What changed":"Kas pasikeitė", "This is the first snapshot. From tomorrow this list shows what changed since the previous update.":"Tai pirmasis duomenų rinkinys. Nuo rytojaus čia matysite, kas pasikeitė nuo ankstesnio atnaujinimo.",
@@ -611,7 +614,7 @@ const RU = {
   "without a project":"без проекта", "available (no project)":"свободны (без проекта)", "inactive projects – no recent hours":"неактивные проекты – в последнее время часов нет", "Hide inactive projects":"Скрыть неактивные проекты","Unassigned resources (at home)":"Неназначенные ресурсы (дома)", "Unassigned resources":"Неназначенные ресурсы",
   "active · at home · no project":"активные · дома · без проекта", "Active workforce":"Активный персонал", "Active projects":"Активные проекты",
   "Below PM plan":"Меньше плана РП", "vs. staffing plan, not requests":"по плану РП, не по заявкам", "People still needed":"Ещё нужно людей",
-  "Hours booked":"Записанные часы", "(unassigned)":"(не назначено)", "30 days":"30 дн.", "90 days":"90 дн.", "180 days":"180 дн.", "last 30 days":"последние 30 дн.", "Labour cost":"Затраты на труд", "h since start":"ч с начала",
+  "Hours booked":"Записанные часы", "Project hours":"Часы по проектам", "Projects manpower plan":"План персонала по проектам","(unassigned)":"(не назначено)", "30 days":"30 дн.", "90 days":"90 дн.", "180 days":"180 дн.", "last 30 days":"последние 30 дн.", "Labour cost":"Затраты на труд", "h since start":"ч с начала",
   "since start (estimate)":"с начала (оценка)", "no change vs previous day":"без изменений со вчера", "vs previous day":"со вчера",
   // changes + trend
   "What changed":"Что изменилось", "This is the first snapshot. From tomorrow this list shows what changed since the previous update.":"Это первый срез данных. Начиная с завтра здесь будет видно, что изменилось с прошлого обновления.",
