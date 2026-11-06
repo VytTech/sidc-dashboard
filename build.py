@@ -108,7 +108,8 @@ def _fernet():
 # Cost figures are moved out of the page data into an encrypted block. Stdlib only, mirrored in
 # template.html with WebCrypto: PBKDF2-SHA256 -> 64 bytes (32 encryption + 32 MAC key),
 # keystream = HMAC-SHA256(enc_key, nonce || counter), tag = HMAC-SHA256(mac_key, salt || nonce || ciphertext).
-COST_KEYS = {"cost", "cost30", "position_cost", "pos_cost", "cost_total", "cost_last30", "cost_model"}
+# "wname" = worker's name, shown instead of the code in management mode only
+COST_KEYS = {"cost", "cost30", "position_cost", "pos_cost", "cost_total", "cost_last30", "cost_model", "wname"}
 MGMT_ITERATIONS = 200_000
 
 
@@ -284,6 +285,8 @@ def aggregate_workers(people, rows, today, ts=None, names=frozenset()):
             "total": round(total.get(name, 0)),
             "last": last.isoformat() if last else "",
         }
+        if os.environ.get("MGMT_PASSWORD"):   # name only when it ends up encrypted (see split_costs)
+            w["wname"] = name
         flags = []
         project = (p.get("Project") or "").strip()
         yard = site_of(project, names) if project else ""

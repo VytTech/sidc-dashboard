@@ -81,6 +81,20 @@ td.wrapcell{white-space:normal;min-width:120px}
 @media (max-width:480px){#requests>*>tr:not(.detail)>:nth-child(3),.plan .w2{display:none}
   #projects td,#requests td,#hours td{white-space:normal}
   th,td{padding:7px 5px}}
+/* Hours booked: inactive projects folded under a bar at the bottom, greyed, rows drop in when opened */
+#hours tr.inactive>td,#hours tr.inactive b{color:var(--muted);font-weight:500}
+#hours tr.inactive>td{opacity:.75}
+#hours tbody.foldtgl td{padding:0;border-bottom:none}
+.foldbtn{width:100%;display:block;text-align:left;padding:11px 10px;margin-top:6px;border:1px dashed var(--line);border-radius:10px;
+  background:var(--soft);color:var(--muted);font:inherit;cursor:pointer}
+.foldbtn:hover{color:var(--ink);border-color:var(--accent)}
+.foldbtn .arr{display:inline-block;width:1em}
+@keyframes rowdrop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+#hours tbody.inact.drop>tr.proj{animation:rowdrop .32s ease-out both}
+#hours tbody.inact.drop>tr.proj:nth-child(4n+3){animation-delay:.04s}
+#hours tbody.inact.drop>tr.proj:nth-child(4n+5){animation-delay:.08s}
+#hours tbody.inact.drop>tr.proj:nth-child(4n+7){animation-delay:.12s}
+@media (prefers-reduced-motion:reduce){#hours tbody.inact.drop>tr.proj{animation:none}}
 html.nocost .cst{display:none !important}
 html.nocost .bars .row.cost{grid-template-columns:130px 1fr 64px}
 tr.totrow td{border-top:2px solid var(--ink);border-bottom:0;background:var(--soft)}
@@ -212,7 +226,7 @@ button.pill.bad::after{content:"›";font-size:16px;line-height:1;margin-left:2p
 .v-dots{display:grid;grid-template-columns:110px 1fr;gap:8px 10px;align-items:center}
 .v-dots .wk{display:flex;gap:6px}
 .v-dots .wk span{width:38px;text-align:center;font-size:11px;color:var(--muted);line-height:1.2}
-.dot{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:750;font-size:13px;flex:none}
+.v-dots .dot{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:750;font-size:13px;flex:none}
 /* same palette as the classic "Staffing outlook" heatmap */
 .dot.bad{background:var(--neg-bg2);color:var(--neg)}
 .dot.bad2{background:var(--neg-bg);color:var(--neg)}
@@ -462,7 +476,7 @@ const LT = {
   "Available to assign":"Galima priskirti",
   // KPIs
   "On site":"Objekte", "In workshops":"Cechuose", "Scheduled to travel":"Suplanuoti išvykti", "At home (rotation)":"Namie (rotacija)", "incl.":"iš jų",
-  "without a project":"be projekto", "Unassigned resources (at home)":"Nepriskirti resursai (namie)", "Unassigned resources":"Nepriskirti resursai",
+  "without a project":"be projekto", "available (no project)":"laisvi (be projekto)", "inactive projects – no recent hours":"neaktyvūs projektai – pastaruoju metu valandų nėra", "Hide inactive projects":"Slėpti neaktyvius projektus","Unassigned resources (at home)":"Nepriskirti resursai (namie)", "Unassigned resources":"Nepriskirti resursai",
   "active · at home · no project":"aktyvūs · namie · be projekto", "Active workforce":"Aktyvūs darbuotojai", "Active projects":"Aktyvūs projektai",
   "Below PM plan":"Mažiau nei PM plane", "vs. staffing plan, not requests":"pagal PM planą, ne pagal užklausas", "People still needed":"Dar trūksta žmonių",
   "Hours booked":"Įrašytos valandos", "(unassigned)":"(nepriskirta)", "30 days":"30 d.", "90 days":"90 d.", "180 days":"180 d.", "last 30 days":"paskutinės 30 d.", "Labour cost":"Darbo kaštai", "h since start":"val. nuo pradžios",
@@ -594,7 +608,7 @@ const RU = {
   "Available to assign":"Можно назначить",
   // KPIs
   "On site":"На объекте", "In workshops":"В цехах", "Scheduled to travel":"Запланирован выезд", "At home (rotation)":"Дома (ротация)", "incl.":"в т. ч.",
-  "without a project":"без проекта", "Unassigned resources (at home)":"Неназначенные ресурсы (дома)", "Unassigned resources":"Неназначенные ресурсы",
+  "without a project":"без проекта", "available (no project)":"свободны (без проекта)", "inactive projects – no recent hours":"неактивные проекты – в последнее время часов нет", "Hide inactive projects":"Скрыть неактивные проекты","Unassigned resources (at home)":"Неназначенные ресурсы (дома)", "Unassigned resources":"Неназначенные ресурсы",
   "active · at home · no project":"активные · дома · без проекта", "Active workforce":"Активный персонал", "Active projects":"Активные проекты",
   "Below PM plan":"Меньше плана РП", "vs. staffing plan, not requests":"по плану РП, не по заявкам", "People still needed":"Ещё нужно людей",
   "Hours booked":"Записанные часы", "(unassigned)":"(не назначено)", "30 days":"30 дн.", "90 days":"90 дн.", "180 days":"180 дн.", "last 30 days":"последние 30 дн.", "Labour cost":"Затраты на труд", "h since start":"ч с начала",
@@ -845,12 +859,11 @@ const kpis = [
   ["On site", ws.Yes || 0, "var(--onsite)", prevT ? (ws.Yes||0) - prevT.onsite : null],
   ["In workshops", ws.Workshop || 0, "var(--workshop)"],
   ["Scheduled to travel", ws.Scheduled || 0, "var(--scheduled)"],
-  ["At home (rotation)", ws.Home || 0, "var(--home)", null, D.workforce.unassigned ? `incl. ${D.workforce.unassigned} without a project` : ""],
-  ["Unassigned resources", D.workforce.unassigned || 0, "var(--accent)", null, "active · at home · no project"],
+  ["At home", ws.Home || 0, "var(--home)", null, D.workforce.unassigned ? `${D.workforce.unassigned} available (no project)` : ""],
+  ["People still needed", openReq.reduce((s,r)=>s+r.gap,0), "var(--pos)", null, `in ${openReq.length} manpower request(s)`],
   ["Active workforce", D.workforce.total, null, prevT ? D.workforce.total - prevT.active : null],
   ["Active projects", (D.project_codes || []).length || real.length, null, null, "yards and workshops not counted"],
   ["Below PM plan · W" + D.week, -shortNow, "var(--neg)", null, "vs. staffing plan, not requests"],
-  ["People still needed", openReq.reduce((s,r)=>s+r.gap,0), null, null, `in ${openReq.length} manpower request(s)`],
   ["Hours booked · last 30 days", D.hours_last30 || 0, null, null, `${fmt(D.hours_total)} h since start`],
   COSTS ? ["Labour cost · last 30 days", null, null, null, `${eur(D.cost_total)} since start (estimate)`, eur(D.cost_last30)] : null,
 ];
@@ -1002,10 +1015,12 @@ const WK = (function(){
     $("wkChips").innerHTML = FLAGS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${k===flag}">${l} <b>${ws.filter(w=>match(w,k)).length}</b></button>`).join("");
     $("wkChips").querySelectorAll(".chip").forEach(b => b.onclick = () => { flag = b.dataset.f; render(); });
     const q = $("wkSearch").value.trim().toLowerCase();
-    const rows = ws.filter(w => match(w, flag) && (!q || (w.code + " " + w.position + " " + w.project).toLowerCase().includes(q)));
+    const rows = ws.filter(w => match(w, flag) && (!q || (w.code + " " + (w.wname || "") + " " + w.position + " " + w.project).toLowerCase().includes(q)));
+    // management mode: the decrypted name replaces the code (position stays visible)
+    const who = w => w.wname ? `<span class="notr">${esc(w.wname)}</span> <span class="faint">${esc(w.position)}</span>` : esc(w.code);
     $("workers").innerHTML = `<thead><tr><th>Worker</th><th>Project</th><th>Status</th>${W.weeks.map(k=>`<th class="num">${k}</th>`).join("")}
       <th class="num">Last 30 days h</th><th>Last booking</th><th class="num">Total h</th><th>Alerts</th></tr></thead><tbody>${
-      rows.map(w => `<tr><td>${w.rid ? `<a class="code" href="${esc(D.ragic_people_url + w.rid)}" target="_blank" rel="noopener">${esc(w.code)} ↗</a>` : esc(w.code)}${w.sub ? ' <span class="faint">sub</span>' : ""}</td>
+      rows.map(w => `<tr><td>${w.rid ? `<a class="code" href="${esc(D.ragic_people_url + w.rid)}" target="_blank" rel="noopener">${who(w)} ↗</a>` : who(w)}${w.sub ? ' <span class="faint">sub</span>' : ""}</td>
         <td>${esc(pname(w.project))}</td><td class="muted">${esc(w.status === "Yes" ? "On site" : w.status)}</td>
         ${w.weeks.map(h=>`<td class="num${h > 60 ? " hot" : ""}">${h || '<span class="faint">–</span>'}</td>`).join("")}
         <td class="num">${w.h30 || '<span class="faint">–</span>'}</td><td class="muted">${w.last ? shortDate(w.last) : "–"}</td>
@@ -1122,18 +1137,27 @@ const WK = (function(){
     cell.querySelectorAll("input.subinc, input.suball").forEach(c => c.onclick = e => e.stopPropagation());
   }
 
-  let rows = "";
+  // inactive = no hours in the last 30 days and no worker alerts: greyed, at the bottom, folded away
+  const isActive = g => g.last30 > 0 || WK.alertsIn(g.name) > 0;
+  hs.sort((a, b) => isActive(b) - isActive(a));
+  let rows = "", rowsOld = "";
   hs.forEach((g,i) => {
     const pos = Object.entries(g.positions);
     const top = g.total ? pos.slice(0,3).map(([k,v]) => `${esc(k)} ${Math.round(v/g.total*100)}%`).join(" · ") : "";
-    const na = WK.alertsIn(g.name);
-    rows += `<tr class="proj" data-h="${i}"><td>${COSTS ? `<input type="checkbox" class="inc" data-n="${esc(g.name)}" ${excl.has(g.name) ? "" : "checked"} title="Include in the total below" aria-label="Include ${esc(pname(g.name))} in the total"> ` : ""}<b>${esc(pname(g.name))}</b></td><td class="num"><b>${g.total ? fmt(g.total) : "–"}</b></td>
+    const na = WK.alertsIn(g.name), act = isActive(g);
+    const row = `<tr class="proj${act ? "" : " inactive"}" data-h="${i}"><td>${COSTS ? `<input type="checkbox" class="inc" data-n="${esc(g.name)}" ${excl.has(g.name) ? "" : "checked"} title="Include in the total below" aria-label="Include ${esc(pname(g.name))} in the total"> ` : ""}<b>${esc(pname(g.name))}</b></td><td class="num"><b>${g.total ? fmt(g.total) : "–"}</b></td>
       <td class="num cst" title="${g.cost ? eurFull(g.cost) : ""}"><b>${g.cost ? eur(g.cost) : "–"}</b></td>
       <td class="num">${g.last30 ? fmt(g.last30) : '<span class="faint">–</span>'}</td><td class="num cst" title="${g.cost30 ? eurFull(g.cost30) : ""}">${g.cost30 ? eur(g.cost30) : '<span class="faint">–</span>'}</td><td class="muted">${g.first ? `${dateTxt(g.first)} – ${dateTxt(g.last)}` : "–"}</td>
       <td class="muted">${top}</td><td>${na ? `<span class="alert">⚠ ${na}</span>` : '<span class="faint">–</span>'}</td></tr>
       <tr class="detail" data-hfor="${i}" hidden><td colspan="8"></td></tr>`;
+    if (act) rows += row; else rowsOld += row;
   });
-  $("hours").innerHTML = `<thead><tr><th>${COSTS ? `<input type="checkbox" class="incall" aria-label="Select or deselect all"> ` : ""}Project / yard</th><th class="num">Hours total</th><th class="num cst">Labour cost</th><th class="num">Hours last 30 days</th><th class="num cst">Cost last 30 days</th><th>First – last entry</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>${COSTS ? `<tfoot><tr class="totrow"><td></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td colspan="3" class="faint"></td></tr></tfoot>` : ""}`;
+  const nOld = hs.filter(g => !isActive(g)).length;
+  const fold = nOld ? `<tbody class="foldtgl"><tr><td colspan="8"><button type="button" class="foldbtn" aria-expanded="false">
+      <span class="fold-open"><span class="arr">▸</span> <b>${nOld}</b> <span>inactive projects – no recent hours</span></span>
+      <span class="fold-close" hidden><span class="arr">▾</span> <span>Hide inactive projects</span></span></button></td></tr></tbody>
+      <tbody class="inact" hidden>${rowsOld}</tbody>` : "";
+  $("hours").innerHTML = `<thead><tr><th>${COSTS ? `<input type="checkbox" class="incall" aria-label="Select or deselect all"> ` : ""}Project / yard</th><th class="num">Hours total</th><th class="num cst">Labour cost</th><th class="num">Hours last 30 days</th><th class="num cst">Cost last 30 days</th><th>First – last entry</th><th>Main positions</th><th>Worker alerts</th></tr></thead><tbody>${rows}</tbody>${fold}${COSTS ? `<tfoot><tr class="totrow"><td></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td colspan="3" class="faint"></td></tr></tfoot>` : ""}`;
   // management mode: total of the ticked projects (the selection is remembered in this browser)
   function totals(){
     if (!COSTS) return;
@@ -1157,6 +1181,13 @@ const WK = (function(){
       saveExcl(); totals(); };
   });
   totals();
+  const fb = $("hours").querySelector(".foldbtn");
+  if (fb) fb.onclick = () => {
+    const body = $("hours").querySelector(":scope > tbody.inact"), open = body.hidden;
+    body.hidden = !open; body.classList.toggle("drop", open);
+    fb.setAttribute("aria-expanded", open);
+    fb.querySelector(".fold-open").hidden = open; fb.querySelector(".fold-close").hidden = !open;
+  };
   $("hours").querySelectorAll("tr.proj").forEach(tr => tr.onclick = () => {
     const d = $("hours").querySelector(`tr.detail[data-hfor="${tr.dataset.h}"]`);
     if (d.hidden && !d.firstElementChild.innerHTML) renderDetail(d.firstElementChild, hs[tr.dataset.h], "total");
